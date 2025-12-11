@@ -1,9 +1,12 @@
+
 import React, { useState } from 'react';
 import { UserRole } from '../types';
 import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle, ShieldCheck } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { useSettings } from '../contexts/SettingsContext';
 
 const Onboarding: React.FC = () => {
+  const { settings } = useSettings();
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
   const [step, setStep] = useState(1); // 1: Auth Form, 2: Profile Setup (Signup only)
   const [loading, setLoading] = useState(false);
@@ -41,14 +44,12 @@ const Onboarding: React.FC = () => {
         if (error) throw error;
       } else {
         // Sign Up
-        // First create the auth user
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
         
-        // If successful, move to profile setup step
         if (data.user) {
           setStep(2);
         }
@@ -63,7 +64,6 @@ const Onboarding: React.FC = () => {
   const handleProfileSetup = async () => {
     setLoading(true);
     try {
-      // Update user metadata
       const { error } = await supabase.auth.updateUser({
         data: {
           full_name: fullName,
@@ -73,7 +73,6 @@ const Onboarding: React.FC = () => {
         }
       });
       if (error) throw error;
-      // Triggers auth state change in App.tsx automatically
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -92,12 +91,18 @@ const Onboarding: React.FC = () => {
 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo Area */}
-        <div className="text-center mb-10 animate-fade-in">
-           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-2xl shadow-glow mb-6">
-             <span className="text-yawai-blue text-3xl font-extrabold">Y</span>
+        <div className="text-center mb-10 animate-fade-in flex flex-col items-center">
+           <div className="w-20 h-20 bg-white rounded-3xl shadow-glow mb-6 flex items-center justify-center overflow-hidden border-2 border-white/20">
+             {settings.logoUrl ? (
+                <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
+             ) : (
+                <div className="w-full h-full bg-gradient-to-tr from-yawai-gold to-yellow-300 flex items-center justify-center text-yawai-blue font-extrabold text-4xl">
+                   {settings.appName.charAt(0)}
+                </div>
+             )}
            </div>
-           <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">YAWAI</h1>
-           <p className="text-slate-400 font-medium tracking-widest text-sm uppercase">Empower. Educate. Elevate.</p>
+           <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">{settings.appName}</h1>
+           <p className="text-slate-400 font-medium tracking-widest text-sm uppercase">{settings.tagline}</p>
         </div>
 
         {/* Card */}

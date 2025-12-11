@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
@@ -10,16 +11,19 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import { useSettings } from '../contexts/SettingsContext';
 
 // Sub-pages
 import AdminOverview from './admin/AdminOverview';
 import AdminSocial from './admin/AdminSocial';
 import AdminContent from './admin/AdminContent';
 import AdminVolunteers from './admin/AdminVolunteers';
+import AdminSettings from './admin/AdminSettings';
 
 const Admin: React.FC = () => {
   const [activeModule, setActiveModule] = useState<'overview' | 'social' | 'content' | 'volunteers' | 'settings'>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { settings } = useSettings();
 
   const menuItems = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
@@ -35,7 +39,8 @@ const Admin: React.FC = () => {
       case 'social': return <AdminSocial />;
       case 'content': return <AdminContent />;
       case 'volunteers': return <AdminVolunteers />;
-      default: return <div className="p-10 text-center text-slate-400">Settings module coming soon.</div>;
+      case 'settings': return <AdminSettings />;
+      default: return <AdminOverview />;
     }
   };
 
@@ -51,8 +56,17 @@ const Admin: React.FC = () => {
       <aside className={`fixed md:sticky top-0 left-0 h-screen w-64 bg-yawai-blue text-white z-50 transform transition-transform duration-300 md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6">
            <div className="flex items-center gap-3 mb-8">
-              <div className="w-8 h-8 bg-yawai-gold rounded-lg flex items-center justify-center text-yawai-blue font-extrabold text-lg">A</div>
-              <h1 className="font-bold text-xl tracking-tight">Admin Panel</h1>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white">
+                {settings.logoUrl ? (
+                   <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+                ) : (
+                   <div className="w-full h-full bg-yawai-gold flex items-center justify-center text-yawai-blue font-extrabold text-lg">{settings.appName.charAt(0)}</div>
+                )}
+              </div>
+              <div>
+                <h1 className="font-bold text-xl tracking-tight leading-none">{settings.appName}</h1>
+                <p className="text-[10px] text-slate-400 font-medium tracking-widest uppercase mt-0.5">Admin Panel</p>
+              </div>
            </div>
            
            <nav className="space-y-1">

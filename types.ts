@@ -1,3 +1,4 @@
+
 export type UserRole = 'user' | 'volunteer' | 'admin';
 
 export interface User {
@@ -10,6 +11,14 @@ export interface User {
   volunteerHours: number;
   joinedDate?: string;
   status?: 'active' | 'blocked';
+}
+
+export interface AppSettings {
+  appName: string;
+  tagline: string;
+  logoUrl: string | null; // Base64 or URL
+  contactEmail: string;
+  accentColor: string;
 }
 
 export type SocialPlatform = 'tiktok' | 'instagram' | 'facebook' | 'twitter' | 'youtube' | 'linkedin';
