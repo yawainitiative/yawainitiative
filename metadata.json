@@ -1,0 +1,7 @@
+{
+  "name": "YAWAI Mobile Web App",
+  "description": "Empowerment platform for Youth and Women, featuring programs, opportunities, and social aggregation.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
