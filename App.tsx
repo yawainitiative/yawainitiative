@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   BookOpen, 
@@ -10,11 +9,11 @@ import {
   User, 
   LogOut,
   ShieldCheck,
+  ChevronRight,
   Loader2
 } from 'lucide-react';
 import { User as UserType } from './types';
 import { supabase } from './services/supabase';
-import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -29,7 +28,6 @@ import Onboarding from './pages/Onboarding';
 
 const Layout: React.FC<{ children: React.ReactNode, user: UserType | null, onLogout: () => void }> = ({ children, user, onLogout }) => {
   const location = useLocation();
-  const { settings } = useSettings();
 
   if (!user) {
     return <>{children}</>;
@@ -53,14 +51,8 @@ const Layout: React.FC<{ children: React.ReactNode, user: UserType | null, onLog
       {/* Mobile Top Bar - Branding Only */}
       <header className="md:hidden bg-white/90 backdrop-blur-md text-yawai-blue p-4 flex justify-center items-center sticky top-0 z-30 border-b border-slate-100 shadow-sm">
         <div className="flex items-center gap-2">
-           <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white shadow-sm border border-slate-100">
-             {settings.logoUrl ? (
-                <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
-             ) : (
-                <div className="w-full h-full bg-gradient-to-tr from-yawai-gold to-yellow-300 flex items-center justify-center text-yawai-blue font-bold text-lg">{settings.appName.charAt(0)}</div>
-             )}
-           </div>
-           <h1 className="text-lg font-extrabold tracking-tight text-yawai-blue">{settings.appName}</h1>
+           <div className="w-8 h-8 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-lg flex items-center justify-center text-yawai-blue font-bold text-lg shadow-sm">Y</div>
+           <h1 className="text-lg font-extrabold tracking-tight">YAWAI</h1>
         </div>
       </header>
 
@@ -68,16 +60,12 @@ const Layout: React.FC<{ children: React.ReactNode, user: UserType | null, onLog
       <aside className="hidden md:flex sticky top-0 left-0 h-screen w-72 bg-yawai-blue text-white flex-col z-40 transition-transform duration-500 ease-in-out shadow-2xl">
         <div className="p-8 pb-4">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-white shadow-glow">
-              {settings.logoUrl ? (
-                <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-tr from-yawai-gold to-yellow-300 flex items-center justify-center text-yawai-blue font-bold text-xl">{settings.appName.charAt(0)}</div>
-              )}
+            <div className="w-10 h-10 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-xl flex items-center justify-center text-yawai-blue font-bold text-xl shadow-glow">
+              Y
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white leading-none">{settings.appName}</h1>
-              <p className="text-[10px] text-slate-400 font-medium tracking-widest uppercase mt-1">{settings.tagline}</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white leading-none">YAWAI</h1>
+              <p className="text-[10px] text-slate-400 font-medium tracking-widest uppercase mt-1">Empowerment</p>
             </div>
           </div>
 
@@ -193,23 +181,15 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.warn("Session check error:", error.message);
-        } else if (data?.session) {
-          setUser(mapSessionToUser(data.session));
-        }
-      } catch (err) {
-        console.error("Unexpected auth error:", err);
-      } finally {
-        setLoading(false);
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser(mapSessionToUser(session));
       }
-    };
+      setLoading(false);
+    });
 
-    checkSession();
-
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -245,40 +225,26 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-yawai-blue">
          <Loader2 size={48} className="animate-spin text-yawai-gold mb-4" />
-         <h2 className="font-bold text-xl">Loading...</h2>
+         <h2 className="font-bold text-xl">Loading YAWAI...</h2>
       </div>
     );
   }
 
   return (
-    <SettingsProvider>
-      <BrowserRouter>
+    <HashRouter>
+      <Layout user={user} onLogout={handleLogout}>
         <Routes>
-          {/* Admin Route - Renders entirely separate from User Layout */}
-          <Route 
-            path="/admin" 
-            element={user?.role === 'admin' ? <Admin /> : <Navigate to="/" replace />} 
-          />
-
-          {/* User Routes - Wrapped in the Standard Layout */}
-          <Route path="*" element={
-            <Layout user={user} onLogout={handleLogout}>
-              <Routes>
-                <Route path="/" element={user ? <Dashboard user={user} /> : <Onboarding />} />
-                <Route path="/programs" element={<Programs />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/opportunities" element={<Opportunities />} />
-                <Route path="/volunteer" element={<Volunteer user={user} />} />
-                <Route path="/donate" element={<Donate user={user} />} />
-                <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
-                {/* Catch-all for user routes */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Layout>
-          } />
+          <Route path="/" element={user ? <Dashboard user={user} /> : <Onboarding />} />
+          <Route path="/programs" element={<Programs />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/opportunities" element={<Opportunities />} />
+          <Route path="/volunteer" element={<Volunteer user={user} />} />
+          <Route path="/donate" element={<Donate user={user} />} />
+          <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
+          <Route path="/admin" element={user?.role === 'admin' ? <Admin /> : <Dashboard user={user!} />} />
         </Routes>
-      </BrowserRouter>
-    </SettingsProvider>
+      </Layout>
+    </HashRouter>
   );
 };
 

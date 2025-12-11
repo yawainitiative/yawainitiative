@@ -1,4 +1,3 @@
-
 export type UserRole = 'user' | 'volunteer' | 'admin';
 
 export interface User {
@@ -9,16 +8,6 @@ export interface User {
   interests: string[];
   bio?: string;
   volunteerHours: number;
-  joinedDate?: string;
-  status?: 'active' | 'blocked';
-}
-
-export interface AppSettings {
-  appName: string;
-  tagline: string;
-  logoUrl: string | null; // Base64 or URL
-  contactEmail: string;
-  accentColor: string;
 }
 
 export type SocialPlatform = 'tiktok' | 'instagram' | 'facebook' | 'twitter' | 'youtube' | 'linkedin';
@@ -31,8 +20,6 @@ export interface SocialPost {
   redirectUrl: string;
   timestamp: string;
   likes: number;
-  status: 'published' | 'hidden';
-  isPinned?: boolean;
 }
 
 export interface Program {
@@ -42,8 +29,6 @@ export interface Program {
   description: string;
   duration: string;
   image: string;
-  requirements?: string;
-  status?: 'draft' | 'published';
 }
 
 export interface Event {
@@ -54,7 +39,6 @@ export interface Event {
   coordinates?: { lat: number; lng: number };
   description: string;
   image: string;
-  rsvpCount?: number;
 }
 
 export interface Opportunity {
@@ -73,7 +57,6 @@ export interface SuccessStory {
   content: string;
   image: string; // or video thumbnail
   videoUrl?: string;
-  isApproved: boolean;
 }
 
 export interface VolunteerTask {
@@ -86,21 +69,4 @@ export interface VolunteerTask {
   hours: number;
   status: 'Open' | 'Assigned' | 'Completed';
   spots?: number;
-}
-
-export interface Donation {
-  id: string;
-  donorName: string;
-  amount: number;
-  date: string;
-  campaign: string; // e.g., "General", "Tech Bootcamp"
-}
-
-export interface AdminStats {
-  totalUsers: number;
-  totalVolunteers: number;
-  activePrograms: number;
-  upcomingEvents: number;
-  totalDonations: number;
-  newSignups: number;
 }

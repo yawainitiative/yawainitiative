@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import { User, UserRole } from '../types';
-import { Settings, LogOut, Bell, Shield, User as UserIcon, AlertTriangle, RefreshCw } from 'lucide-react';
-import { supabase } from '../services/supabase';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { User } from '../types';
+import { Settings, LogOut, Bell, Shield, User as UserIcon } from 'lucide-react';
 
 interface ProfileProps {
   user: User | null;
@@ -10,38 +8,7 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
-  const [isUpdating, setIsUpdating] = useState(false);
-  const navigate = useNavigate();
-
   if (!user) return null;
-
-  const handleRoleSwitch = async (newRole: UserRole) => {
-    setIsUpdating(true);
-    try {
-      // 1. Update the user metadata on the backend
-      const { error } = await supabase.auth.updateUser({
-        data: { role: newRole }
-      });
-      if (error) throw error;
-
-      // 2. Force a session refresh so the App component picks up the new role immediately
-      const { error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) throw refreshError;
-
-      // 3. Navigate smoothly without reloading the window
-      if (newRole === 'admin') {
-        navigate('/admin');
-      } else {
-        alert("Switched back to Member view.");
-        navigate('/');
-      }
-    } catch (err) {
-      console.error("Failed to switch role", err);
-      alert("Failed to switch role. Please try again.");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   return (
     <div className="space-y-6 animate-fade-in pb-8">
@@ -58,8 +25,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
          <div className="relative z-10">
            <h2 className="text-2xl font-bold text-slate-900">{user.name}</h2>
            <div className="flex items-center justify-center gap-2 mt-1">
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide border 
-                ${user.role === 'admin' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-700 border-blue-100'}`}>
+              <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide border border-blue-100">
                 {user.role}
               </span>
            </div>
@@ -100,7 +66,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
            <span className="font-semibold text-slate-700">Privacy & Security</span>
         </button>
         
-        {/* Logout Button */}
+        {/* Logout Button (Visible on mobile primarily) */}
         {onLogout && (
           <button 
             onClick={onLogout}
@@ -112,38 +78,6 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
              <span className="font-bold text-red-500">Sign Out</span>
           </button>
         )}
-      </div>
-
-      {/* Demo Developer Tools */}
-      <div className="bg-slate-800 p-6 rounded-[2rem] shadow-xl text-white">
-        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-          <AlertTriangle className="text-yellow-400" size={20} /> 
-          Developer / Demo Options
-        </h3>
-        <p className="text-slate-400 text-sm mb-4">
-          Use these options to switch roles for previewing the app features.
-        </p>
-        
-        <div className="grid grid-cols-2 gap-3">
-           <button 
-             onClick={() => handleRoleSwitch('user')}
-             disabled={isUpdating}
-             className={`px-4 py-3 rounded-xl font-bold text-sm transition-all border border-slate-600 hover:bg-slate-700
-               ${user.role === 'user' ? 'bg-slate-700 border-white text-white' : 'text-slate-400'}
-             `}
-           >
-             Switch to Member
-           </button>
-           <button 
-             onClick={() => handleRoleSwitch('admin')}
-             disabled={isUpdating}
-             className={`px-4 py-3 rounded-xl font-bold text-sm transition-all border border-slate-600 hover:bg-red-900/30
-               ${user.role === 'admin' ? 'bg-red-600 border-red-400 text-white' : 'text-red-400'}
-             `}
-           >
-             {isUpdating ? <RefreshCw className="animate-spin mx-auto" size={16} /> : 'Switch to Admin'}
-           </button>
-        </div>
       </div>
     </div>
   );

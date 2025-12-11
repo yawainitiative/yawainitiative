@@ -1,12 +1,9 @@
-
 import React, { useState } from 'react';
 import { UserRole } from '../types';
-import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/supabase';
-import { useSettings } from '../contexts/SettingsContext';
 
 const Onboarding: React.FC = () => {
-  const { settings } = useSettings();
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
   const [step, setStep] = useState(1); // 1: Auth Form, 2: Profile Setup (Signup only)
   const [loading, setLoading] = useState(false);
@@ -44,12 +41,14 @@ const Onboarding: React.FC = () => {
         if (error) throw error;
       } else {
         // Sign Up
+        // First create the auth user
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
         
+        // If successful, move to profile setup step
         if (data.user) {
           setStep(2);
         }
@@ -64,6 +63,7 @@ const Onboarding: React.FC = () => {
   const handleProfileSetup = async () => {
     setLoading(true);
     try {
+      // Update user metadata
       const { error } = await supabase.auth.updateUser({
         data: {
           full_name: fullName,
@@ -73,6 +73,7 @@ const Onboarding: React.FC = () => {
         }
       });
       if (error) throw error;
+      // Triggers auth state change in App.tsx automatically
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -91,18 +92,12 @@ const Onboarding: React.FC = () => {
 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo Area */}
-        <div className="text-center mb-10 animate-fade-in flex flex-col items-center">
-           <div className="w-20 h-20 bg-white rounded-3xl shadow-glow mb-6 flex items-center justify-center overflow-hidden border-2 border-white/20">
-             {settings.logoUrl ? (
-                <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
-             ) : (
-                <div className="w-full h-full bg-gradient-to-tr from-yawai-gold to-yellow-300 flex items-center justify-center text-yawai-blue font-extrabold text-4xl">
-                   {settings.appName.charAt(0)}
-                </div>
-             )}
+        <div className="text-center mb-10 animate-fade-in">
+           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-2xl shadow-glow mb-6">
+             <span className="text-yawai-blue text-3xl font-extrabold">Y</span>
            </div>
-           <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">{settings.appName}</h1>
-           <p className="text-slate-400 font-medium tracking-widest text-sm uppercase">{settings.tagline}</p>
+           <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">YAWAI</h1>
+           <p className="text-slate-400 font-medium tracking-widest text-sm uppercase">Empower. Educate. Elevate.</p>
         </div>
 
         {/* Card */}
@@ -200,40 +195,28 @@ const Onboarding: React.FC = () => {
 
               <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">I am joining as a...</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-4">
                     <button 
                       onClick={() => setRole('user')}
-                      className={`relative p-3 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-1 group
+                      className={`relative p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-2 group
                         ${role === 'user' 
                           ? 'bg-yawai-gold/20 border-yawai-gold text-white shadow-lg shadow-yellow-500/20' 
                           : 'bg-transparent border-slate-700 text-slate-400 hover:bg-slate-800'
                         }`}
                     >
-                      <Star size={20} className={role === 'user' ? 'text-yawai-gold' : 'text-slate-500 group-hover:text-slate-300'} />
-                      <span className="font-bold text-xs">Member</span>
+                      <Star size={24} className={role === 'user' ? 'text-yawai-gold' : 'text-slate-500 group-hover:text-slate-300'} />
+                      <span className="font-bold text-sm">Member</span>
                     </button>
                     <button 
                       onClick={() => setRole('volunteer')}
-                      className={`relative p-3 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-1 group
+                      className={`relative p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-2 group
                         ${role === 'volunteer' 
                           ? 'bg-blue-500/20 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
                           : 'bg-transparent border-slate-700 text-slate-400 hover:bg-slate-800'
                         }`}
                     >
-                      <Heart size={20} className={role === 'volunteer' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
-                      <span className="font-bold text-xs">Volunteer</span>
-                    </button>
-                    {/* DEMO ONLY OPTION */}
-                    <button 
-                      onClick={() => setRole('admin')}
-                      className={`relative p-3 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-1 group
-                        ${role === 'admin' 
-                          ? 'bg-red-500/20 border-red-500 text-white shadow-lg shadow-red-500/20' 
-                          : 'bg-transparent border-slate-700 text-slate-400 hover:bg-slate-800'
-                        }`}
-                    >
-                      <ShieldCheck size={20} className={role === 'admin' ? 'text-red-500' : 'text-slate-500 group-hover:text-slate-300'} />
-                      <span className="font-bold text-xs">Admin (Demo)</span>
+                      <Heart size={24} className={role === 'volunteer' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
+                      <span className="font-bold text-sm">Volunteer</span>
                     </button>
                   </div>
               </div>

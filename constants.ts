@@ -81,16 +81,14 @@ export const STORIES: SuccessStory[] = [
     author: 'Sarah Jenkins',
     role: 'Program Alumni',
     content: 'Through YAWAI, I learned to code and now I work as a frontend developer!',
-    image: 'https://picsum.photos/100/100?random=30',
-    isApproved: true
+    image: 'https://picsum.photos/100/100?random=30'
   },
   {
     id: 's2',
     author: 'David Okon',
     role: 'Volunteer',
     content: 'Volunteering here gave me purpose and connected me with amazing mentors.',
-    image: 'https://picsum.photos/100/100?random=31',
-    isApproved: true
+    image: 'https://picsum.photos/100/100?random=31'
   }
 ];
 
