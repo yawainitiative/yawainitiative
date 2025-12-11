@@ -24,46 +24,37 @@ const Donate: React.FC<DonateProps> = ({ user }) => {
       return;
     }
 
-    const PaystackPop = (window as any).PaystackPop;
-
-    if (!PaystackPop || typeof PaystackPop.setup !== 'function') {
-      alert("Payment system is still loading or unavailable. Please refresh and try again.");
-      return;
-    }
-
     setIsProcessing(true);
 
-    try {
-      const handler = PaystackPop.setup({
-        key: PAYSTACK_PUBLIC_KEY,
-        email: email,
-        amount: finalAmount * 100, // Paystack expects amount in kobo
-        currency: 'NGN',
-        metadata: {
-          custom_fields: [
-            {
-              display_name: "Donor Name",
-              variable_name: "donor_name",
-              value: user?.name || "Anonymous Donor"
-            }
-          ]
-        },
-        callback: (transaction: any) => {
-          setIsProcessing(false);
-          setPaymentSuccess(true);
-          console.log("Payment success:", transaction);
-        },
-        onClose: () => {
-          setIsProcessing(false);
-        }
-      });
-      
-      handler.openIframe();
-    } catch (error) {
-      console.error("Paystack initialization error:", error);
-      setIsProcessing(false);
-      alert("Failed to initialize payment.");
-    }
+    const paystack = new (window as any).PaystackPop();
+    paystack.newTransaction({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: email,
+      amount: finalAmount * 100, // Paystack expects amount in kobo
+      currency: 'NGN',
+      metadata: {
+        custom_fields: [
+          {
+            display_name: "Donor Name",
+            variable_name: "donor_name",
+            value: user?.name || "Anonymous Donor"
+          }
+        ]
+      },
+      onSuccess: (transaction: any) => {
+        setIsProcessing(false);
+        setPaymentSuccess(true);
+        console.log("Payment success:", transaction);
+      },
+      onCancel: () => {
+        setIsProcessing(false);
+      },
+      onError: (error: any) => {
+        setIsProcessing(false);
+        console.error("Payment error:", error);
+        alert("Payment failed. Please try again.");
+      }
+    });
   };
 
   if (paymentSuccess) {
