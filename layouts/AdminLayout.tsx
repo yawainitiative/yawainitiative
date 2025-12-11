@@ -26,11 +26,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/admin/login');
+    navigate('/admin'); // Redirect to login page at /admin
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Overview', path: '/admin' },
+    { icon: LayoutDashboard, label: 'Overview', path: '/admin/dashboard' },
     { icon: Share2, label: 'Social Feed', path: '/admin/social' },
     { icon: FileText, label: 'Content Manager', path: '/admin/content' },
     { icon: Users, label: 'Volunteer Hub', path: '/admin/volunteers' },
@@ -61,7 +61,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
             <NavLink
               key={item.path}
               to={item.path}
-              end={item.path === '/admin'}
+              end={item.path === '/admin/dashboard'} // Ensure exact match for dashboard
               className={({ isActive }) => `
                 flex items-center gap-3 px-4 py-3 rounded-lg transition-all
                 ${isActive 

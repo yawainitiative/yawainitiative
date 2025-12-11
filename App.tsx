@@ -166,8 +166,9 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
 };
 
 const ProtectedAdminRoute = ({ user }: { user: UserType | null }) => {
+  // If not admin, redirect to the new login path /admin
   if (!user || user.role !== 'admin') {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/admin" replace />;
   }
   return <AdminLayout user={user} />;
 };
@@ -247,13 +248,16 @@ const App: React.FC = () => {
       <BrowserRouter>
         <Routes>
           {/* Admin Routes - Strictly Separated */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<ProtectedAdminRoute user={user} />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="social" element={<AdminSocial />} />
-            <Route path="content" element={<AdminContent />} />
-            <Route path="volunteers" element={<AdminVolunteers />} />
-            <Route path="settings" element={<AdminSettings />} />
+          {/* 1. Login Page at /admin */}
+          <Route path="/admin" element={<AdminLogin />} />
+          
+          {/* 2. Protected Admin Dashboard and Sub-pages */}
+          <Route element={<ProtectedAdminRoute user={user} />}>
+             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+             <Route path="/admin/social" element={<AdminSocial />} />
+             <Route path="/admin/content" element={<AdminContent />} />
+             <Route path="/admin/volunteers" element={<AdminVolunteers />} />
+             <Route path="/admin/settings" element={<AdminSettings />} />
           </Route>
 
           {/* Public Routes */}

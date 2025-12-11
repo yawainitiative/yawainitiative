@@ -22,13 +22,13 @@ const AdminLogin: React.FC = () => {
     const checkSession = async () => {
       // Check local fallback first
       if (localStorage.getItem('yawai_demo_admin') === 'true') {
-        navigate('/admin', { replace: true });
+        navigate('/admin/dashboard', { replace: true });
         return;
       }
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.user_metadata?.role === 'admin') {
-        navigate('/admin', { replace: true });
+        navigate('/admin/dashboard', { replace: true });
       }
     };
     checkSession();
@@ -57,7 +57,7 @@ const AdminLogin: React.FC = () => {
         localStorage.setItem('yawai_demo_admin', 'true');
         
         // Force a page reload to ensure App.tsx picks up the new localStorage state
-        window.location.href = '/admin';
+        window.location.href = '/admin/dashboard';
         return;
       }
 
@@ -68,7 +68,7 @@ const AdminLogin: React.FC = () => {
       }
 
       // Success - Navigate to dashboard
-      navigate('/admin', { replace: true });
+      navigate('/admin/dashboard', { replace: true });
 
     } catch (err: any) {
       // If we fall through here, it's a non-auth error or role error

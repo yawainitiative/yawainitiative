@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, Trash2, RefreshCw, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, ExternalLink, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
 import { SocialPost } from '../../types';
 
 // Mock initial data
@@ -22,37 +22,54 @@ const AdminSocial: React.FC = () => {
   const [platform, setPlatform] = useState('instagram');
   const [loading, setLoading] = useState(false);
   const [autoFetch, setAutoFetch] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simulation of "Auto-Fetch" logic
+  // Real URL Fetching using Microlink API
   const handleFetchPost = async () => {
     if (!url) return;
     setLoading(true);
+    setError(null);
     
-    // Simulate API delay
-    await new Promise(r => setTimeout(r, 1500));
+    try {
+      // Use Microlink API to get metadata (free tier, public)
+      const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
+      const result = await response.json();
 
-    // Create a mock post based on the input
-    const newPost: SocialPost = {
-      id: Date.now().toString(),
-      platform: platform as any,
-      thumbnail: `https://picsum.photos/400/400?random=${Date.now()}`,
-      caption: `Auto-fetched content from ${platform}...`,
-      redirectUrl: url,
-      timestamp: 'Just now',
-      likes: Math.floor(Math.random() * 500)
-    };
+      if (result.status === 'success') {
+        const { image, title, description, logo } = result.data;
+        
+        const newPost: SocialPost = {
+          id: Date.now().toString(),
+          platform: platform as any,
+          // Prioritize screenshot/image from meta, fallback to logo or placeholder
+          thumbnail: image?.url || logo?.url || 'https://via.placeholder.com/400?text=No+Preview',
+          caption: description || title || `New post from ${platform}`,
+          redirectUrl: url,
+          timestamp: 'Just now',
+          likes: 0 // New posts start with 0 likes
+        };
 
-    setPosts([newPost, ...posts]);
-    setUrl('');
-    setLoading(false);
+        setPosts([newPost, ...posts]);
+        setUrl('');
+      } else {
+        throw new Error("Could not fetch content. Please check the URL.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch content. Ensure the URL is public and valid.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = (id: string) => {
-    setPosts(posts.filter(p => p.id !== id));
+    if (window.confirm("Are you sure you want to remove this post from the feed?")) {
+      setPosts(posts.filter(p => p.id !== id));
+    }
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Social Media Manager</h2>
@@ -72,6 +89,11 @@ const AdminSocial: React.FC = () => {
       {/* Add New Post */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
          <h3 className="font-bold text-lg mb-4">Add New Post</h3>
+         {error && (
+            <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2">
+              <AlertCircle size={16} /> {error}
+            </div>
+         )}
          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             <div className="md:col-span-3">
                <select 
@@ -90,7 +112,7 @@ const AdminSocial: React.FC = () => {
             <div className="md:col-span-7">
                <input 
                  type="text" 
-                 placeholder="Paste post URL here..." 
+                 placeholder="Paste post URL here (e.g. https://instagram.com/p/...)" 
                  value={url}
                  onChange={e => setUrl(e.target.value)}
                  className="w-full border border-slate-300 rounded-lg px-4 py-3 outline-none focus:border-red-500"
@@ -102,7 +124,7 @@ const AdminSocial: React.FC = () => {
                  disabled={loading || !url}
                  className="w-full h-full bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                >
-                 {loading ? <RefreshCw className="animate-spin" size={18} /> : <Plus size={18} />}
+                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
                  <span>Fetch</span>
                </button>
             </div>
@@ -112,7 +134,7 @@ const AdminSocial: React.FC = () => {
       {/* Active Posts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {posts.map(post => (
-          <div key={post.id} className="group bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 relative">
+          <div key={post.id} className="group bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 relative animate-slide-up">
              <div className="aspect-[4/3] relative bg-slate-100">
                <img src={post.thumbnail} alt="" className="w-full h-full object-cover" />
                <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-md uppercase font-bold">
@@ -120,7 +142,7 @@ const AdminSocial: React.FC = () => {
                </div>
              </div>
              <div className="p-4">
-               <p className="text-slate-600 text-sm line-clamp-2 mb-3">{post.caption}</p>
+               <p className="text-slate-600 text-sm line-clamp-2 mb-3 h-10">{post.caption}</p>
                <div className="flex justify-between items-center text-xs text-slate-400 font-medium border-t border-slate-50 pt-3">
                  <span>{post.timestamp}</span>
                  <span>{post.likes} Likes</span>

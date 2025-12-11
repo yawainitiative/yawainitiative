@@ -1,8 +1,11 @@
 
 import React from 'react';
 import { Users, Heart, Calendar, ArrowUpRight, Globe, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
+
   // Mock Stats
   const stats = [
     { label: 'Total Users', value: '2,845', change: '+12%', icon: Users, color: 'bg-blue-500' },
@@ -12,7 +15,7 @@ const AdminDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       <div>
         <h2 className="text-2xl font-bold text-slate-900">Dashboard Overview</h2>
         <p className="text-slate-500">Welcome back. Here is what's happening at YAWAI today.</p>
@@ -21,7 +24,7 @@ const AdminDashboard: React.FC = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
               <div className={`w-12 h-12 rounded-lg ${stat.color} bg-opacity-10 flex items-center justify-center text-${stat.color.replace('bg-', '')}`}>
                 <stat.icon size={24} className={stat.color.replace('bg-', 'text-')} />
@@ -38,21 +41,21 @@ const AdminDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
             <h3 className="font-bold text-slate-800">Recent User Activity</h3>
             <button className="text-sm text-blue-600 font-bold hover:underline">View All</button>
           </div>
-          <div className="p-6">
+          <div className="p-6 flex-1">
             <div className="space-y-6">
                {[1,2,3,4].map(i => (
-                 <div key={i} className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500">U</div>
+                 <div key={i} className="flex items-center gap-4 group">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">U</div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-slate-900">User <span className="font-bold">John Doe</span> signed up for <span className="font-bold">Digital Skills 101</span></p>
                       <p className="text-xs text-slate-400">2 hours ago</p>
                     </div>
-                    <ArrowUpRight size={16} className="text-slate-300" />
+                    <ArrowUpRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                  </div>
                ))}
             </div>
@@ -60,30 +63,40 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Action Required */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
           <div className="p-6 border-b border-slate-100 bg-amber-50/50">
              <div className="flex items-center gap-2 text-amber-600">
                <AlertCircle size={20} />
                <h3 className="font-bold">Needs Attention</h3>
              </div>
           </div>
-          <div className="p-6 space-y-4">
-             <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
+          <div className="p-6 space-y-4 flex-1">
+             <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 hover:border-red-200 transition-colors">
                <div className="flex justify-between items-center mb-2">
                  <span className="text-xs font-bold text-slate-400 uppercase">Volunteers</span>
-                 <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                </div>
-               <p className="text-sm font-semibold text-slate-800">5 New Volunteer applications pending approval</p>
-               <button className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-800">Review Applications</button>
+               <p className="text-sm font-semibold text-slate-800">3 New Volunteer applications pending approval</p>
+               <button 
+                onClick={() => navigate('/admin/volunteers')}
+                className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+               >
+                 Review Applications <ArrowUpRight size={12} />
+               </button>
              </div>
              
-             <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
+             <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 hover:border-amber-200 transition-colors">
                <div className="flex justify-between items-center mb-2">
                  <span className="text-xs font-bold text-slate-400 uppercase">Content</span>
                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                </div>
                <p className="text-sm font-semibold text-slate-800">Draft "Annual Gala" event needs publishing</p>
-               <button className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-800">Go to Content</button>
+               <button 
+                onClick={() => navigate('/admin/content')}
+                className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+               >
+                 Go to Content <ArrowUpRight size={12} />
+               </button>
              </div>
           </div>
         </div>
