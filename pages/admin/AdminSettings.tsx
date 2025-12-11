@@ -57,9 +57,9 @@ const AdminSettings: React.FC = () => {
          <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Preview Section */}
             <div className="flex-shrink-0">
-               <div className="w-32 h-32 bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative">
+               <div className="w-32 h-32 bg-slate-100 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative">
                   {preview ? (
-                    <img src={preview} alt="Logo Preview" className="w-full h-full object-contain p-2" />
+                    <img src={preview} alt="Logo Preview" className="w-full h-full object-cover p-1 rounded-full" />
                   ) : (
                     <span className="text-slate-400 text-xs font-bold text-center p-2">No Logo Set</span>
                   )}

@@ -69,7 +69,7 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
       <header className="md:hidden bg-white/90 backdrop-blur-md text-yawai-blue p-4 flex justify-center items-center sticky top-0 z-30 border-b border-slate-100 shadow-sm">
         <div className="flex items-center gap-2">
            {logoUrl ? (
-             <img src={logoUrl} alt="YAWAI Logo" className="w-8 h-8 object-contain" />
+             <img src={logoUrl} alt="YAWAI Logo" className="w-8 h-8 object-cover rounded-full" />
            ) : (
              <div className="w-8 h-8 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-lg flex items-center justify-center text-yawai-blue font-bold text-lg shadow-sm">Y</div>
            )}
@@ -82,7 +82,7 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
         <div className="p-8 pb-4">
           <div className="flex items-center gap-3 mb-8">
             {logoUrl ? (
-              <img src={logoUrl} alt="YAWAI Logo" className="w-10 h-10 object-contain rounded-xl bg-white/10" />
+              <img src={logoUrl} alt="YAWAI Logo" className="w-10 h-10 object-cover rounded-full bg-white/10" />
             ) : (
               <div className="w-10 h-10 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-xl flex items-center justify-center text-yawai-blue font-bold text-xl shadow-glow">Y</div>
             )}

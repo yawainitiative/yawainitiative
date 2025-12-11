@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, User } from '../types';
-import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
+import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle, Check } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useLogo } from '../contexts/LogoContext';
 
@@ -11,9 +11,10 @@ interface OnboardingProps {
 
 const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
-  const [step, setStep] = useState(1); // 1: Auth Form, 2: Profile Setup (Signup only)
+  const [step, setStep] = useState(1); // 1: Auth Form, 2: Profile Setup
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false); // Success state for email verification message
   const { logoUrl } = useLogo();
 
   // Form Data
@@ -27,8 +28,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
   useEffect(() => {
     if (user && user.name === 'User') {
       setStep(2);
-      // Logic for signup flow continuation
-      setAuthMode('signup');
+      // Logic for existing user profile completion
+      setAuthMode('signup'); // UI Mode
     }
   }, [user]);
 
@@ -44,62 +45,114 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
     }
   };
 
-  const handleAuth = async () => {
+  const handleStep1 = async () => {
     setError(null);
+    
+    if (authMode === 'signin') {
+       // Sign In Logic
+       setLoading(true);
+       try {
+         const { error } = await supabase.auth.signInWithPassword({
+           email,
+           password,
+         });
+         if (error) throw error;
+         // If successful, App.tsx will handle the session change automatically
+       } catch (err: any) {
+         setError(err.message);
+         setLoading(false);
+       }
+    } else {
+       // Sign Up Logic - Move to Step 2 to collect more info first
+       if (!email || !password) {
+         setError("Please enter a valid email and password.");
+         return;
+       }
+       if (password.length < 6) {
+         setError("Password must be at least 6 characters.");
+         return;
+       }
+       setStep(2);
+    }
+  };
+
+  const handleFinishSetup = async () => {
     setLoading(true);
+    setError(null);
 
     try {
-      if (authMode === 'signin') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-      } else {
-        // Sign Up
-        // First create the auth user
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
+      if (user) {
+        // CASE 1: Existing User (Logged in but incomplete profile)
+        const { error } = await supabase.auth.updateUser({
+          data: {
+            full_name: fullName,
+            role: role,
+            interests: selectedInterests,
+            volunteerHours: 0
+          }
         });
         if (error) throw error;
         
-        // If successful, move to profile setup step
+        // Force reload to ensure App.tsx picks up the new metadata
+        window.location.reload();
+
+      } else {
+        // CASE 2: New Signup (Not logged in yet)
+        // We pass the metadata during sign up so it's saved even if verification is pending
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              role: role,
+              interests: selectedInterests,
+              volunteerHours: 0
+            }
+          }
+        });
+        
+        if (error) throw error;
+        
+        // Show success message
         if (data.user) {
-          setStep(2);
+           setIsSuccess(true);
         }
       }
+      
     } catch (err: any) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };
 
-  const handleProfileSetup = async () => {
-    setLoading(true);
-    try {
-      // Update user metadata
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: fullName,
-          role: role,
-          interests: selectedInterests,
-          volunteerHours: 0
-        }
-      });
-      if (error) throw error;
-      
-      // Force reload to ensure App.tsx picks up the new metadata from a fresh session fetch
-      // This is necessary because the session object in state might not instantly reflect metadata changes
-      window.location.reload();
-      
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-yawai-blue flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center animate-slide-up shadow-2xl">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600">
+            <Mail size={40} />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Check Your Email</h2>
+          <p className="text-slate-500 mb-6">
+            We've sent a verification link to <span className="font-bold text-slate-800">{email}</span>. 
+            Please check your inbox (and spam folder) to activate your account.
+          </p>
+          <button 
+             onClick={() => {
+               setIsSuccess(false);
+               setAuthMode('signin');
+               setStep(1);
+               setPassword(''); // Clear password for security/UX
+             }}
+             className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl hover:bg-slate-800 transition-colors"
+          >
+             Go to Login Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
@@ -114,8 +167,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
         {/* Logo Area */}
         <div className="text-center mb-10 animate-fade-in flex flex-col items-center">
            {logoUrl ? (
-             <div className="w-24 h-24 bg-white/10 rounded-2xl p-2 mb-6 shadow-glow backdrop-blur-md">
-               <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+             <div className="w-24 h-24 bg-white/10 rounded-full p-2 mb-6 shadow-glow backdrop-blur-md overflow-hidden">
+               <img src={logoUrl} alt="Logo" className="w-full h-full object-cover rounded-full" />
              </div>
            ) : (
              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-2xl shadow-glow mb-6">
@@ -187,13 +240,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
               </div>
 
               <button 
-                onClick={handleAuth}
+                onClick={handleStep1}
                 disabled={loading || !email || !password}
                 className="w-full group bg-gradient-to-r from-yawai-gold to-yellow-500 text-yawai-blue font-bold py-4 rounded-xl hover:shadow-glow disabled:opacity-50 disabled:hover:shadow-none transition-all mt-4 flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : (
                   <>
-                    <span>{authMode === 'signup' ? 'Create Account' : 'Sign In'}</span>
+                    <span>{authMode === 'signup' ? 'Continue' : 'Sign In'}</span>
                     <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
@@ -207,6 +260,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
                 <h2 className="text-2xl font-bold text-white mb-2">Complete Profile</h2>
                 <p className="text-slate-400 text-sm">Tell us a bit more about yourself.</p>
               </div>
+
+              {/* Show error on step 2 as well if signup fails */}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-start gap-3 text-red-200 text-sm">
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <p>{error}</p>
+                </div>
+              )}
 
               <div className="relative group">
                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-yawai-gold transition-colors" size={20} />
@@ -270,14 +331,24 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
                   })}
                 </div>
               </div>
-
-              <button 
-                onClick={handleProfileSetup}
-                disabled={loading || !fullName}
-                className="w-full bg-white text-yawai-blue font-bold py-4 rounded-xl hover:bg-slate-200 transition-colors shadow-xl flex items-center justify-center gap-2"
-              >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : "Finish Setup"}
-              </button>
+              
+              <div className="flex gap-3">
+                {!user && (
+                    <button 
+                        onClick={() => setStep(1)}
+                        className="px-6 py-4 rounded-xl border border-slate-600 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                    >
+                        Back
+                    </button>
+                )}
+                <button 
+                    onClick={handleFinishSetup}
+                    disabled={loading || !fullName}
+                    className="flex-1 bg-white text-yawai-blue font-bold py-4 rounded-xl hover:bg-slate-200 transition-colors shadow-xl flex items-center justify-center gap-2"
+                >
+                    {loading ? <Loader2 className="animate-spin" size={20} /> : "Finish Setup"}
+                </button>
+              </div>
             </div>
           )}
         </div>

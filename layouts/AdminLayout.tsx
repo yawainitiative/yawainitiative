@@ -46,7 +46,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
       `}>
         <div className="p-6 flex items-center gap-3 border-b border-slate-800">
           {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="w-8 h-8 object-contain rounded bg-white/10" />
+            <img src={logoUrl} alt="Logo" className="w-8 h-8 object-cover rounded-full bg-white/10" />
           ) : (
             <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold">A</div>
           )}
