@@ -38,11 +38,18 @@ const ScrollToTop = () => {
   return null;
 };
 
+// Helper to determine if profile is fully set up
+const isProfileComplete = (user: UserType) => {
+  // If name is default 'User', we consider it incomplete
+  return user.name && user.name !== 'User';
+};
+
 // Public Layout Component
 const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null, onLogout: () => void }> = ({ children, user, onLogout }) => {
   const { logoUrl } = useLogo();
   
-  if (!user) return <>{children}</>;
+  // If no user, OR user exists but hasn't completed onboarding (name is 'User'), render simple layout
+  if (!user || !isProfileComplete(user)) return <>{children}</>;
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
@@ -264,7 +271,8 @@ const App: React.FC = () => {
           <Route path="*" element={
             <PublicLayout user={user} onLogout={handleLogout}>
               <Routes>
-                <Route path="/" element={user ? <Dashboard user={user} /> : <Onboarding />} />
+                {/* Render Dashboard ONLY if profile is complete, otherwise Onboarding */}
+                <Route path="/" element={user && isProfileComplete(user) ? <Dashboard user={user} /> : <Onboarding user={user} />} />
                 <Route path="/programs" element={<Programs />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/opportunities" element={<Opportunities />} />

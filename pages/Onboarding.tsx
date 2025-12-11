@@ -1,11 +1,15 @@
 
-import React, { useState } from 'react';
-import { UserRole } from '../types';
+import React, { useState, useEffect } from 'react';
+import { UserRole, User } from '../types';
 import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useLogo } from '../contexts/LogoContext';
 
-const Onboarding: React.FC = () => {
+interface OnboardingProps {
+  user?: User | null;
+}
+
+const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
   const [step, setStep] = useState(1); // 1: Auth Form, 2: Profile Setup (Signup only)
   const [loading, setLoading] = useState(false);
@@ -18,6 +22,15 @@ const Onboarding: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<UserRole>('user');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+  // Effect to jump to step 2 if user is already technically signed in but has generic name
+  useEffect(() => {
+    if (user && user.name === 'User') {
+      setStep(2);
+      // Logic for signup flow continuation
+      setAuthMode('signup');
+    }
+  }, [user]);
 
   const interests = [
     'Digital Skills', 'Entrepreneurship', 'Leadership', 'Volunteering', 'Health', 'Networking'
@@ -76,7 +89,11 @@ const Onboarding: React.FC = () => {
         }
       });
       if (error) throw error;
-      // Triggers auth state change in App.tsx automatically
+      
+      // Force reload to ensure App.tsx picks up the new metadata from a fresh session fetch
+      // This is necessary because the session object in state might not instantly reflect metadata changes
+      window.location.reload();
+      
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -184,7 +201,7 @@ const Onboarding: React.FC = () => {
             </div>
           )}
 
-          {step === 2 && authMode === 'signup' && (
+          {step === 2 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-white mb-2">Complete Profile</h2>
