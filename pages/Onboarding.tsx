@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserRole } from '../types';
-import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
+import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle, ShieldCheck } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 const Onboarding: React.FC = () => {
@@ -195,28 +195,40 @@ const Onboarding: React.FC = () => {
 
               <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">I am joining as a...</label>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-2">
                     <button 
                       onClick={() => setRole('user')}
-                      className={`relative p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-2 group
+                      className={`relative p-3 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-1 group
                         ${role === 'user' 
                           ? 'bg-yawai-gold/20 border-yawai-gold text-white shadow-lg shadow-yellow-500/20' 
                           : 'bg-transparent border-slate-700 text-slate-400 hover:bg-slate-800'
                         }`}
                     >
-                      <Star size={24} className={role === 'user' ? 'text-yawai-gold' : 'text-slate-500 group-hover:text-slate-300'} />
-                      <span className="font-bold text-sm">Member</span>
+                      <Star size={20} className={role === 'user' ? 'text-yawai-gold' : 'text-slate-500 group-hover:text-slate-300'} />
+                      <span className="font-bold text-xs">Member</span>
                     </button>
                     <button 
                       onClick={() => setRole('volunteer')}
-                      className={`relative p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-2 group
+                      className={`relative p-3 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-1 group
                         ${role === 'volunteer' 
                           ? 'bg-blue-500/20 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
                           : 'bg-transparent border-slate-700 text-slate-400 hover:bg-slate-800'
                         }`}
                     >
-                      <Heart size={24} className={role === 'volunteer' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
-                      <span className="font-bold text-sm">Volunteer</span>
+                      <Heart size={20} className={role === 'volunteer' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
+                      <span className="font-bold text-xs">Volunteer</span>
+                    </button>
+                    {/* DEMO ONLY OPTION */}
+                    <button 
+                      onClick={() => setRole('admin')}
+                      className={`relative p-3 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-1 group
+                        ${role === 'admin' 
+                          ? 'bg-red-500/20 border-red-500 text-white shadow-lg shadow-red-500/20' 
+                          : 'bg-transparent border-slate-700 text-slate-400 hover:bg-slate-800'
+                        }`}
+                    >
+                      <ShieldCheck size={20} className={role === 'admin' ? 'text-red-500' : 'text-slate-500 group-hover:text-slate-300'} />
+                      <span className="font-bold text-xs">Admin (Demo)</span>
                     </button>
                   </div>
               </div>

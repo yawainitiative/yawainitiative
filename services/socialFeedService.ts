@@ -1,8 +1,6 @@
 import { SocialPost, SocialPlatform } from '../types';
 
-// In a real app, these would call a backend proxy which handles API keys securely.
-// Since we are client-side only here, we simulate the API responses.
-
+// MOCK DATA for initial load
 const MOCK_POSTS: SocialPost[] = [
   {
     id: '1',
@@ -11,7 +9,9 @@ const MOCK_POSTS: SocialPost[] = [
     caption: 'Empowering the next generation! #YAWAI #Youth',
     redirectUrl: 'https://tiktok.com/@yawai/video/1',
     timestamp: '2h ago',
-    likes: 1205
+    likes: 1205,
+    status: 'published',
+    isPinned: true
   },
   {
     id: '2',
@@ -20,7 +20,8 @@ const MOCK_POSTS: SocialPost[] = [
     caption: 'Highlights from our Women in Tech summit.',
     redirectUrl: 'https://instagram.com/p/xyz',
     timestamp: '5h ago',
-    likes: 890
+    likes: 890,
+    status: 'published'
   },
   {
     id: '3',
@@ -29,7 +30,8 @@ const MOCK_POSTS: SocialPost[] = [
     caption: 'We are proud to announce our new scholarship partnership.',
     redirectUrl: 'https://linkedin.com/posts/xyz',
     timestamp: '1d ago',
-    likes: 450
+    likes: 450,
+    status: 'published'
   },
   {
     id: '4',
@@ -38,51 +40,68 @@ const MOCK_POSTS: SocialPost[] = [
     caption: 'Full Documentary: Changing Lives in Rural Communities',
     redirectUrl: 'https://youtube.com/watch?v=xyz',
     timestamp: '2d ago',
-    likes: 3200
-  },
-  {
-    id: '5',
-    platform: 'twitter',
-    thumbnail: 'https://picsum.photos/600/300?random=5',
-    caption: 'Join us live tomorrow for the Town Hall meeting! 📢',
-    redirectUrl: 'https://twitter.com/yawai/status/xyz',
-    timestamp: '3h ago',
-    likes: 120
+    likes: 3200,
+    status: 'published'
   }
 ];
 
-// Simulating network delay
+// Helper to simulate network delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Helper to detect platform from URL
+const detectPlatform = (url: string): SocialPlatform => {
+  if (url.includes('tiktok')) return 'tiktok';
+  if (url.includes('instagram')) return 'instagram';
+  if (url.includes('facebook')) return 'facebook';
+  if (url.includes('twitter') || url.includes('x.com')) return 'twitter';
+  if (url.includes('linkedin')) return 'linkedin';
+  if (url.includes('youtube') || url.includes('youtu.be')) return 'youtube';
+  return 'twitter'; // default fallback
+};
+
 export const socialFeedService = {
+  // Fetch all active posts for the Dashboard
   async fetchAllPosts(): Promise<SocialPost[]> {
-    await delay(800); // Simulate network latency
-    // In a real scenario, this would aggregate results from the below functions
+    await delay(800);
+    // Return sorted by pinned first, then timestamp (mocked order)
+    return MOCK_POSTS.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+  },
+
+  // ADMIN: Fetch metadata from a URL (Simulated Proxy)
+  async fetchPostMetadata(url: string): Promise<SocialPost> {
+    await delay(1500); // Simulate API crawling time
+    
+    const platform = detectPlatform(url);
+    
+    // Simulate finding content
+    return {
+      id: Math.random().toString(36).substr(2, 9),
+      platform,
+      thumbnail: `https://picsum.photos/500/500?random=${Math.floor(Math.random() * 1000)}`,
+      caption: `Auto-fetched content from ${platform}. This would be the actual post caption extracted via API.`,
+      redirectUrl: url,
+      timestamp: 'Just now',
+      likes: 0,
+      status: 'published'
+    };
+  },
+
+  // ADMIN: Add new post manually
+  async addPost(post: SocialPost): Promise<SocialPost[]> {
+    await delay(500);
+    MOCK_POSTS.unshift(post);
     return MOCK_POSTS;
   },
 
-  // Independent fetchers as requested by the prompt
-  async fetchTikTokPosts(): Promise<SocialPost[]> {
-    return MOCK_POSTS.filter(p => p.platform === 'tiktok');
-  },
-  
-  async fetchInstagramPosts(): Promise<SocialPost[]> {
-    return MOCK_POSTS.filter(p => p.platform === 'instagram');
+  // ADMIN: Delete post
+  async deletePost(id: string): Promise<void> {
+    const index = MOCK_POSTS.findIndex(p => p.id === id);
+    if (index > -1) MOCK_POSTS.splice(index, 1);
   },
 
-  async fetchFacebookPosts(): Promise<SocialPost[]> {
-    return MOCK_POSTS.filter(p => p.platform === 'facebook');
-  },
-
-  async fetchTwitterPosts(): Promise<SocialPost[]> {
-    return MOCK_POSTS.filter(p => p.platform === 'twitter');
-  },
-
-  async fetchYouTubeVideos(): Promise<SocialPost[]> {
-    return MOCK_POSTS.filter(p => p.platform === 'youtube');
-  },
-
-  async fetchLinkedInPosts(): Promise<SocialPost[]> {
-    return MOCK_POSTS.filter(p => p.platform === 'linkedin');
+  // ADMIN: Toggle Pin
+  async togglePin(id: string): Promise<void> {
+    const post = MOCK_POSTS.find(p => p.id === id);
+    if (post) post.isPinned = !post.isPinned;
   }
 };

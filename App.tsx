@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
 import { 
   Home, 
   BookOpen, 
@@ -9,7 +9,6 @@ import {
   User, 
   LogOut,
   ShieldCheck,
-  ChevronRight,
   Loader2
 } from 'lucide-react';
 import { User as UserType } from './types';
@@ -231,7 +230,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Layout user={user} onLogout={handleLogout}>
         <Routes>
           <Route path="/" element={user ? <Dashboard user={user} /> : <Onboarding />} />
@@ -241,10 +240,13 @@ const App: React.FC = () => {
           <Route path="/volunteer" element={<Volunteer user={user} />} />
           <Route path="/donate" element={<Donate user={user} />} />
           <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
-          <Route path="/admin" element={user?.role === 'admin' ? <Admin /> : <Dashboard user={user!} />} />
+          <Route 
+            path="/admin" 
+            element={user?.role === 'admin' ? <Admin /> : <Navigate to="/" replace />} 
+          />
         </Routes>
       </Layout>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 
