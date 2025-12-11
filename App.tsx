@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, NavLink, useLocation, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { 
   Home, BookOpen, Calendar, Briefcase, Heart, User, LogOut, ShieldCheck, Loader2
 } from 'lucide-react';
@@ -25,6 +25,17 @@ import AdminContent from './pages/admin/AdminContent';
 import AdminVolunteers from './pages/admin/AdminVolunteers';
 import AdminLayout from './layouts/AdminLayout';
 
+// ScrollToTop Component to ensure navigation feels like a new page load
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 // Public Layout Component
 const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null, onLogout: () => void }> = ({ children, user, onLogout }) => {
   if (!user) return <>{children}</>;
@@ -40,6 +51,9 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans">
+      {/* ScrollToTop acts here to reset scroll on route change */}
+      <ScrollToTop />
+      
       {/* Mobile Top Bar */}
       <header className="md:hidden bg-white/90 backdrop-blur-md text-yawai-blue p-4 flex justify-center items-center sticky top-0 z-30 border-b border-slate-100 shadow-sm">
         <div className="flex items-center gap-2">
@@ -191,7 +205,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         {/* Admin Routes - Strictly Separated */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -217,7 +231,7 @@ const App: React.FC = () => {
           </PublicLayout>
         } />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

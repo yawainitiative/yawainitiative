@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CreditCard, Heart, Shield, Check, Mail, Loader2, PartyPopper } from 'lucide-react';
+import { Heart, Shield, Check, Mail, Loader2, PartyPopper } from 'lucide-react';
 import { User } from '../types';
 
 interface DonateProps {
@@ -40,7 +40,8 @@ const Donate: React.FC<DonateProps> = ({ user }) => {
     }
 
     // 2. Check if Paystack script is loaded
-    if (typeof (window as any).PaystackPop === 'undefined') {
+    const PaystackPop = (window as any).PaystackPop;
+    if (!PaystackPop) {
       alert("Payment system is still loading. Please check your internet connection and try again in a few seconds.");
       return;
     }
@@ -48,11 +49,11 @@ const Donate: React.FC<DonateProps> = ({ user }) => {
     setIsProcessing(true);
 
     try {
-      const paystack = new (window as any).PaystackPop();
-      paystack.newTransaction({
+      // 3. Initialize Transaction using setup() for v1/inline.js
+      const handler = PaystackPop.setup({
         key: PAYSTACK_PUBLIC_KEY,
         email: email,
-        amount: finalAmount * 100, // Paystack expects amount in kobo (e.g. 1000 Naira = 100000 kobo)
+        amount: finalAmount * 100, // Paystack expects amount in kobo
         currency: 'NGN',
         metadata: {
           custom_fields: [
@@ -68,24 +69,26 @@ const Donate: React.FC<DonateProps> = ({ user }) => {
             }
           ]
         },
-        onSuccess: (transaction: any) => {
+        callback: (response: any) => {
           setIsProcessing(false);
-          setPaymentSuccess(true);
-          console.log("Payment success:", transaction);
+          if (response.status === 'success') {
+            setPaymentSuccess(true);
+            console.log("Payment success:", response);
+          } else {
+             alert("Transaction was not completed.");
+          }
         },
-        onCancel: () => {
+        onClose: () => {
           setIsProcessing(false);
-        },
-        onError: (error: any) => {
-          setIsProcessing(false);
-          console.error("Payment error:", error);
-          alert("Payment initialization failed. Please try again.");
         }
       });
+
+      handler.openIframe();
+      
     } catch (err) {
       setIsProcessing(false);
       console.error("Paystack integration error:", err);
-      alert("An error occurred launching the payment window.");
+      alert("An error occurred launching the payment window. Please check console for details.");
     }
   };
 
@@ -216,3 +219,4 @@ const Donate: React.FC<DonateProps> = ({ user }) => {
 };
 
 export default Donate;
+    
