@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { CreditCard, Heart, Shield, Check, Mail, Loader2, PartyPopper } from 'lucide-react';
 import { User } from '../types';
@@ -14,47 +15,78 @@ const Donate: React.FC<DonateProps> = ({ user }) => {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   const preSets = [1000, 5000, 10000, 50000];
-  const PAYSTACK_PUBLIC_KEY = "pk_live_8d46e9ff701d90c8b1a8613b1d1b4c8df2954f81";
+
+  // ACCESS API KEY FROM ENVIRONMENT VARIABLES
+  const PAYSTACK_PUBLIC_KEY = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY;
 
   const handleDonate = () => {
     const finalAmount = amount || Number(customAmount);
-    if (!finalAmount || finalAmount <= 0) return;
+    
+    // 1. Validation Checks
+    if (!PAYSTACK_PUBLIC_KEY) {
+      alert("Configuration Error: Paystack Public Key is missing in .env file.");
+      console.error("Missing VITE_PAYSTACK_PUBLIC_KEY");
+      return;
+    }
+
+    if (!finalAmount || finalAmount <= 0) {
+      alert("Please select or enter a valid donation amount.");
+      return;
+    }
+
     if (!email) {
       alert("Please enter your email address to proceed.");
       return;
     }
 
+    // 2. Check if Paystack script is loaded
+    if (typeof (window as any).PaystackPop === 'undefined') {
+      alert("Payment system is still loading. Please check your internet connection and try again in a few seconds.");
+      return;
+    }
+
     setIsProcessing(true);
 
-    const paystack = new (window as any).PaystackPop();
-    paystack.newTransaction({
-      key: PAYSTACK_PUBLIC_KEY,
-      email: email,
-      amount: finalAmount * 100, // Paystack expects amount in kobo
-      currency: 'NGN',
-      metadata: {
-        custom_fields: [
-          {
-            display_name: "Donor Name",
-            variable_name: "donor_name",
-            value: user?.name || "Anonymous Donor"
-          }
-        ]
-      },
-      onSuccess: (transaction: any) => {
-        setIsProcessing(false);
-        setPaymentSuccess(true);
-        console.log("Payment success:", transaction);
-      },
-      onCancel: () => {
-        setIsProcessing(false);
-      },
-      onError: (error: any) => {
-        setIsProcessing(false);
-        console.error("Payment error:", error);
-        alert("Payment failed. Please try again.");
-      }
-    });
+    try {
+      const paystack = new (window as any).PaystackPop();
+      paystack.newTransaction({
+        key: PAYSTACK_PUBLIC_KEY,
+        email: email,
+        amount: finalAmount * 100, // Paystack expects amount in kobo (e.g. 1000 Naira = 100000 kobo)
+        currency: 'NGN',
+        metadata: {
+          custom_fields: [
+            {
+              display_name: "Donor Name",
+              variable_name: "donor_name",
+              value: user?.name || "Anonymous Donor"
+            },
+            {
+              display_name: "App Source",
+              variable_name: "source",
+              value: "YAWAI_WEB_APP"
+            }
+          ]
+        },
+        onSuccess: (transaction: any) => {
+          setIsProcessing(false);
+          setPaymentSuccess(true);
+          console.log("Payment success:", transaction);
+        },
+        onCancel: () => {
+          setIsProcessing(false);
+        },
+        onError: (error: any) => {
+          setIsProcessing(false);
+          console.error("Payment error:", error);
+          alert("Payment initialization failed. Please try again.");
+        }
+      });
+    } catch (err) {
+      setIsProcessing(false);
+      console.error("Paystack integration error:", err);
+      alert("An error occurred launching the payment window.");
+    }
   };
 
   if (paymentSuccess) {
