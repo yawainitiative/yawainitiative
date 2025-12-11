@@ -253,21 +253,30 @@ const App: React.FC = () => {
   return (
     <SettingsProvider>
       <BrowserRouter>
-        <Layout user={user} onLogout={handleLogout}>
-          <Routes>
-            <Route path="/" element={user ? <Dashboard user={user} /> : <Onboarding />} />
-            <Route path="/programs" element={<Programs />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/opportunities" element={<Opportunities />} />
-            <Route path="/volunteer" element={<Volunteer user={user} />} />
-            <Route path="/donate" element={<Donate user={user} />} />
-            <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
-            <Route 
-              path="/admin" 
-              element={user?.role === 'admin' ? <Admin /> : <Navigate to="/" replace />} 
-            />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Admin Route - Renders entirely separate from User Layout */}
+          <Route 
+            path="/admin" 
+            element={user?.role === 'admin' ? <Admin /> : <Navigate to="/" replace />} 
+          />
+
+          {/* User Routes - Wrapped in the Standard Layout */}
+          <Route path="*" element={
+            <Layout user={user} onLogout={handleLogout}>
+              <Routes>
+                <Route path="/" element={user ? <Dashboard user={user} /> : <Onboarding />} />
+                <Route path="/programs" element={<Programs />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/opportunities" element={<Opportunities />} />
+                <Route path="/volunteer" element={<Volunteer user={user} />} />
+                <Route path="/donate" element={<Donate user={user} />} />
+                <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
+                {/* Catch-all for user routes */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Layout>
+          } />
+        </Routes>
       </BrowserRouter>
     </SettingsProvider>
   );

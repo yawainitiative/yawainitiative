@@ -9,9 +9,12 @@ import {
   LogOut, 
   Bell,
   Menu,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../services/supabase';
 
 // Sub-pages
 import AdminOverview from './admin/AdminOverview';
@@ -24,6 +27,7 @@ const Admin: React.FC = () => {
   const [activeModule, setActiveModule] = useState<'overview' | 'social' | 'content' | 'volunteers' | 'settings'>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { settings } = useSettings();
+  const navigate = useNavigate();
 
   const menuItems = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,6 +46,11 @@ const Admin: React.FC = () => {
       case 'settings': return <AdminSettings />;
       default: return <AdminOverview />;
     }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
   };
 
   return (
@@ -88,8 +97,17 @@ const Admin: React.FC = () => {
            </nav>
         </div>
         
-        <div className="absolute bottom-0 left-0 w-full p-6">
-           <button className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-bold">
+        <div className="absolute bottom-0 left-0 w-full p-6 space-y-3">
+           <button 
+             onClick={() => navigate('/')}
+             className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-bold w-full"
+           >
+             <ArrowLeft size={16} /> Back to App
+           </button>
+           <button 
+             onClick={handleSignOut}
+             className="flex items-center gap-2 text-red-400 hover:text-red-300 transition-colors text-sm font-bold w-full"
+           >
              <LogOut size={16} /> Sign Out
            </button>
         </div>
