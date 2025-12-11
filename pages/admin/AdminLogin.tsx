@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -13,9 +12,10 @@ const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
   const { logoUrl } = useLogo();
 
-  // SECURE CREDENTIALS (As requested)
-  const ADMIN_EMAIL = "yawainitiative2022@gmail.com";
-  const ADMIN_PASS = "YawaInitiative123412";
+  // SECURE CREDENTIALS
+  // Use environment variables if available, otherwise fall back to the requested defaults
+  const ADMIN_EMAIL = (import.meta as any).env.VITE_ADMIN_EMAIL || "yawainitiative2022@gmail.com";
+  const ADMIN_PASS = (import.meta as any).env.VITE_ADMIN_PASSWORD || "YawaInitiative123412";
 
   // Check if already logged in as admin
   useEffect(() => {
