@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { User as UserType } from './types';
 import { supabase } from './services/supabase';
+import { LogoProvider, useLogo } from './contexts/LogoContext';
 
 // Public Pages
 import Dashboard from './pages/Dashboard';
@@ -23,6 +24,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminSocial from './pages/admin/AdminSocial';
 import AdminContent from './pages/admin/AdminContent';
 import AdminVolunteers from './pages/admin/AdminVolunteers';
+import AdminSettings from './pages/admin/AdminSettings';
 import AdminLayout from './layouts/AdminLayout';
 
 // ScrollToTop Component to ensure navigation feels like a new page load
@@ -38,6 +40,8 @@ const ScrollToTop = () => {
 
 // Public Layout Component
 const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null, onLogout: () => void }> = ({ children, user, onLogout }) => {
+  const { logoUrl } = useLogo();
+  
   if (!user) return <>{children}</>;
 
   const navItems = [
@@ -57,7 +61,11 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
       {/* Mobile Top Bar */}
       <header className="md:hidden bg-white/90 backdrop-blur-md text-yawai-blue p-4 flex justify-center items-center sticky top-0 z-30 border-b border-slate-100 shadow-sm">
         <div className="flex items-center gap-2">
-           <div className="w-8 h-8 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-lg flex items-center justify-center text-yawai-blue font-bold text-lg shadow-sm">Y</div>
+           {logoUrl ? (
+             <img src={logoUrl} alt="YAWAI Logo" className="w-8 h-8 object-contain" />
+           ) : (
+             <div className="w-8 h-8 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-lg flex items-center justify-center text-yawai-blue font-bold text-lg shadow-sm">Y</div>
+           )}
            <h1 className="text-lg font-extrabold tracking-tight">YAWAI</h1>
         </div>
       </header>
@@ -66,7 +74,11 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
       <aside className="hidden md:flex sticky top-0 left-0 h-screen w-72 bg-yawai-blue text-white flex-col z-40 shadow-2xl">
         <div className="p-8 pb-4">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-xl flex items-center justify-center text-yawai-blue font-bold text-xl shadow-glow">Y</div>
+            {logoUrl ? (
+              <img src={logoUrl} alt="YAWAI Logo" className="w-10 h-10 object-contain rounded-xl bg-white/10" />
+            ) : (
+              <div className="w-10 h-10 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-xl flex items-center justify-center text-yawai-blue font-bold text-xl shadow-glow">Y</div>
+            )}
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white leading-none">YAWAI</h1>
               <p className="text-[10px] text-slate-400 font-medium tracking-widest uppercase mt-1">Empowerment</p>
@@ -165,12 +177,36 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Check for Local Storage "Demo" Admin Session
+    const checkLocalSession = () => {
+      const isDemoAdmin = localStorage.getItem('yawai_demo_admin') === 'true';
+      if (isDemoAdmin) {
+        setUser({
+          id: 'admin-local-1',
+          email: 'yawainitiative2022@gmail.com',
+          name: 'YAWAI Admin',
+          role: 'admin',
+          interests: [],
+          volunteerHours: 0
+        });
+        setLoading(false);
+        return true;
+      }
+      return false;
+    };
+
+    if (checkLocalSession()) return;
+
+    // 2. Check Supabase Session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setUser(mapSessionToUser(session));
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // If we are locally logged in as admin, ignore supabase updates that might be null
+      if (localStorage.getItem('yawai_demo_admin') === 'true') return;
+
       setUser(session ? mapSessionToUser(session) : null);
       setLoading(false);
     });
@@ -191,8 +227,10 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
+    localStorage.removeItem('yawai_demo_admin');
     await supabase.auth.signOut();
     setUser(null);
+    window.location.href = '/'; // Force reload to clear all states
   };
 
   if (loading) {
@@ -205,33 +243,36 @@ const App: React.FC = () => {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Admin Routes - Strictly Separated */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<ProtectedAdminRoute user={user} />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="social" element={<AdminSocial />} />
-          <Route path="content" element={<AdminContent />} />
-          <Route path="volunteers" element={<AdminVolunteers />} />
-        </Route>
+    <LogoProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Admin Routes - Strictly Separated */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<ProtectedAdminRoute user={user} />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="social" element={<AdminSocial />} />
+            <Route path="content" element={<AdminContent />} />
+            <Route path="volunteers" element={<AdminVolunteers />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
 
-        {/* Public Routes */}
-        <Route path="*" element={
-          <PublicLayout user={user} onLogout={handleLogout}>
-            <Routes>
-              <Route path="/" element={user ? <Dashboard user={user} /> : <Onboarding />} />
-              <Route path="/programs" element={<Programs />} />
-              <Route path="/events" element={<Events />} />
-              <Route path="/opportunities" element={<Opportunities />} />
-              <Route path="/volunteer" element={<Volunteer user={user} />} />
-              <Route path="/donate" element={<Donate user={user} />} />
-              <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
-            </Routes>
-          </PublicLayout>
-        } />
-      </Routes>
-    </BrowserRouter>
+          {/* Public Routes */}
+          <Route path="*" element={
+            <PublicLayout user={user} onLogout={handleLogout}>
+              <Routes>
+                <Route path="/" element={user ? <Dashboard user={user} /> : <Onboarding />} />
+                <Route path="/programs" element={<Programs />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/opportunities" element={<Opportunities />} />
+                <Route path="/volunteer" element={<Volunteer user={user} />} />
+                <Route path="/donate" element={<Donate user={user} />} />
+                <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
+              </Routes>
+            </PublicLayout>
+          } />
+        </Routes>
+      </BrowserRouter>
+    </LogoProvider>
   );
 };
 

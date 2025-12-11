@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { User } from '../types';
 import { supabase } from '../services/supabase';
+import { useLogo } from '../contexts/LogoContext';
 
 interface AdminLayoutProps {
   user: User;
@@ -21,6 +22,7 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+  const { logoUrl } = useLogo();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -43,7 +45,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
         lg:relative lg:translate-x-0
       `}>
         <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold">A</div>
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="w-8 h-8 object-contain rounded bg-white/10" />
+          ) : (
+            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold">A</div>
+          )}
           <div>
             <h1 className="font-bold text-lg leading-none">YAWAI</h1>
             <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Admin Panel</span>
@@ -71,10 +77,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
 
           <div className="pt-8 mt-8 border-t border-slate-800">
              <div className="px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">System</div>
-             <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white rounded-lg transition-all">
+             <NavLink 
+                to="/admin/settings"
+                className={({ isActive }) => `
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
+                ${isActive 
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-900/20' 
+                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                }
+              `}>
                 <Settings size={20} />
                 <span className="font-medium text-sm">Settings</span>
-             </button>
+             </NavLink>
              <button 
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/10 hover:text-red-300 rounded-lg transition-all"

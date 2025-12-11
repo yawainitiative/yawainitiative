@@ -1,13 +1,16 @@
+
 import React, { useState } from 'react';
 import { UserRole } from '../types';
 import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { useLogo } from '../contexts/LogoContext';
 
 const Onboarding: React.FC = () => {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
   const [step, setStep] = useState(1); // 1: Auth Form, 2: Profile Setup (Signup only)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { logoUrl } = useLogo();
 
   // Form Data
   const [email, setEmail] = useState('');
@@ -92,10 +95,16 @@ const Onboarding: React.FC = () => {
 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo Area */}
-        <div className="text-center mb-10 animate-fade-in">
-           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-2xl shadow-glow mb-6">
-             <span className="text-yawai-blue text-3xl font-extrabold">Y</span>
-           </div>
+        <div className="text-center mb-10 animate-fade-in flex flex-col items-center">
+           {logoUrl ? (
+             <div className="w-24 h-24 bg-white/10 rounded-2xl p-2 mb-6 shadow-glow backdrop-blur-md">
+               <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+             </div>
+           ) : (
+             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-2xl shadow-glow mb-6">
+               <span className="text-yawai-blue text-3xl font-extrabold">Y</span>
+             </div>
+           )}
            <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">YAWAI</h1>
            <p className="text-slate-400 font-medium tracking-widest text-sm uppercase">Empower. Educate. Elevate.</p>
         </div>
