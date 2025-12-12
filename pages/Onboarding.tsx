@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, User } from '../types';
-import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle, Check } from 'lucide-react';
+import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle, Facebook, ArrowLeft } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useLogo } from '../contexts/LogoContext';
 
@@ -9,12 +9,22 @@ interface OnboardingProps {
   user?: User | null;
 }
 
+const GoogleIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M23.52 12.29C23.52 11.43 23.44 10.61 23.3 9.81H12V14.45H18.45C18.17 15.93 17.33 17.18 16.06 18.04V21.02H19.93C22.19 18.94 23.52 15.89 23.52 12.29Z" fill="#4285F4"/>
+    <path d="M12 24C15.24 24 17.96 22.92 19.93 21.02L16.06 18.04C14.99 18.76 13.62 19.19 12 19.19C8.88 19.19 6.23 17.08 5.28 14.23H1.27V17.34C3.25 21.27 7.31 24 12 24Z" fill="#34A853"/>
+    <path d="M5.28 14.23C5.03 13.37 4.89 12.46 4.89 11.53C4.89 10.6 5.03 9.69 5.28 8.83V5.72H1.27C0.46 7.33 0 9.14 0 11.53C0 13.92 0.46 15.73 1.27 17.34L5.28 14.23Z" fill="#FBBC05"/>
+    <path d="M12 3.86C13.77 3.86 15.35 4.47 16.6 5.66L19.99 2.27C17.95 0.37 15.24 0 12 0C7.31 0 3.25 2.73 1.27 6.66L5.28 9.77C6.23 6.92 8.88 3.86 12 3.86Z" fill="#EA4335"/>
+  </svg>
+);
+
 const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
+  const [viewMode, setViewMode] = useState<'auth' | 'forgot-password'>('auth');
   const [step, setStep] = useState(1); // 1: Auth Form, 2: Profile Setup
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false); // Success state for email verification message
+  const [successMessage, setSuccessMessage] = useState<string | null>(null); // For Forgot Password / Email verification
   const { logoUrl } = useLogo();
 
   // Form Data
@@ -47,6 +57,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
 
   const handleStep1 = async () => {
     setError(null);
+    setSuccessMessage(null);
     
     if (authMode === 'signin') {
        // Sign In Logic
@@ -76,6 +87,43 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
     }
   };
 
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setSuccessMessage("We've sent a password reset link to your email.");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFinishSetup = async () => {
     setLoading(true);
     setError(null);
@@ -98,7 +146,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
 
       } else {
         // CASE 2: New Signup (Not logged in yet)
-        // We pass the metadata during sign up so it's saved even if verification is pending
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -116,7 +163,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
         
         // Show success message
         if (data.user) {
-           setIsSuccess(true);
+           setSuccessMessage("check_email_verification");
         }
       }
       
@@ -126,7 +173,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
     }
   };
 
-  if (isSuccess) {
+  // SUCCESS SCREEN (Verification Link)
+  if (successMessage === "check_email_verification") {
     return (
       <div className="min-h-screen bg-yawai-blue flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center animate-slide-up shadow-2xl">
@@ -140,10 +188,10 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
           </p>
           <button 
              onClick={() => {
-               setIsSuccess(false);
+               setSuccessMessage(null);
                setAuthMode('signin');
                setStep(1);
-               setPassword(''); // Clear password for security/UX
+               setPassword(''); 
              }}
              className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl hover:bg-slate-800 transition-colors"
           >
@@ -182,7 +230,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
         {/* Card */}
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl animate-slide-up">
           
-          {step === 1 && (
+          {step === 1 && viewMode === 'auth' && (
             <div className="space-y-6">
               <div className="flex gap-4 p-1 bg-black/20 rounded-xl mb-6">
                  <button 
@@ -239,10 +287,21 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
                 </div>
               </div>
 
+              {authMode === 'signin' && (
+                <div className="flex justify-end">
+                  <button 
+                    onClick={() => setViewMode('forgot-password')}
+                    className="text-sm text-yawai-gold hover:text-yellow-400 font-medium"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+
               <button 
                 onClick={handleStep1}
                 disabled={loading || !email || !password}
-                className="w-full group bg-gradient-to-r from-yawai-gold to-yellow-500 text-yawai-blue font-bold py-4 rounded-xl hover:shadow-glow disabled:opacity-50 disabled:hover:shadow-none transition-all mt-4 flex items-center justify-center gap-2"
+                className="w-full group bg-gradient-to-r from-yawai-gold to-yellow-500 text-yawai-blue font-bold py-4 rounded-xl hover:shadow-glow disabled:opacity-50 disabled:hover:shadow-none transition-all mt-2 flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : (
                   <>
@@ -251,7 +310,82 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
                   </>
                 )}
               </button>
+
+              <div className="relative py-2">
+                 <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-700"></div>
+                 </div>
+                 <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-slate-900 px-2 text-slate-500 font-semibold">Or continue with</span>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                 <button 
+                   onClick={() => handleSocialLogin('google')}
+                   className="bg-white/5 hover:bg-white/10 border border-slate-700 hover:border-slate-500 rounded-xl py-3 flex items-center justify-center gap-2 transition-all"
+                 >
+                   <GoogleIcon />
+                   <span className="text-white font-medium text-sm">Google</span>
+                 </button>
+                 <button 
+                   onClick={() => handleSocialLogin('facebook')}
+                   className="bg-[#1877F2]/10 hover:bg-[#1877F2]/20 border border-[#1877F2]/30 hover:border-[#1877F2]/50 rounded-xl py-3 flex items-center justify-center gap-2 transition-all"
+                 >
+                   <Facebook size={20} className="text-[#1877F2]" />
+                   <span className="text-[#1877F2] font-medium text-sm">Facebook</span>
+                 </button>
+              </div>
             </div>
+          )}
+
+          {step === 1 && viewMode === 'forgot-password' && (
+             <div className="space-y-6 animate-fade-in">
+               <button onClick={() => setViewMode('auth')} className="text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium mb-2">
+                 <ArrowLeft size={16} /> Back to Login
+               </button>
+               
+               <div className="text-center mb-4">
+                 <div className="w-16 h-16 bg-yawai-gold/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Lock size={32} className="text-yawai-gold" />
+                 </div>
+                 <h2 className="text-2xl font-bold text-white mb-1">Forgot Password</h2>
+                 <p className="text-slate-400 text-sm">Enter your email and we'll send you a link to reset your password.</p>
+               </div>
+
+               {error && (
+                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-start gap-3 text-red-200 text-sm">
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <p>{error}</p>
+                </div>
+               )}
+
+               {successMessage && (
+                <div className="bg-green-500/10 border border-green-500/50 rounded-xl p-3 flex items-start gap-3 text-green-200 text-sm">
+                  <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+                  <p>{successMessage}</p>
+                </div>
+               )}
+
+               <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-yawai-gold transition-colors" size={20} />
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-yawai-gold focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                    placeholder="Enter your email"
+                  />
+               </div>
+
+               <button 
+                  onClick={handleForgotPassword}
+                  disabled={loading || !email}
+                  className="w-full bg-yawai-gold text-yawai-blue font-bold py-4 rounded-xl hover:shadow-glow disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : "Send Reset Link"}
+               </button>
+             </div>
           )}
 
           {step === 2 && (
