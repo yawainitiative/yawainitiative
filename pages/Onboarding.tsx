@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, User } from '../types';
-import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle, Facebook, ArrowLeft } from 'lucide-react';
+import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle, Facebook, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useLogo } from '../contexts/LogoContext';
 
@@ -25,6 +25,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null); // For Forgot Password / Email verification
+  const [showPassword, setShowPassword] = useState(false);
   const { logoUrl } = useLogo();
 
   // Form Data
@@ -64,13 +65,19 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
        setLoading(true);
        try {
          const { error } = await supabase.auth.signInWithPassword({
-           email,
+           email: email.trim(),
            password,
          });
          if (error) throw error;
          // If successful, App.tsx will handle the session change automatically
        } catch (err: any) {
-         setError(err.message);
+         console.error("Login Error:", err);
+         let msg = err.message;
+         if (msg.includes("Invalid login credentials") || msg.includes("Email not confirmed")) {
+            // More specific error for the user
+            msg = "Incorrect email or password. Please double-check your credentials.";
+         }
+         setError(msg);
          setLoading(false);
        }
     } else {
@@ -112,7 +119,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
@@ -147,7 +154,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
       } else {
         // CASE 2: New Signup (Not logged in yet)
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
             data: {
@@ -163,12 +170,26 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
         
         // Show success message
         if (data.user) {
-           setSuccessMessage("check_email_verification");
+           // If user exists and is confirmed, we might get a user object but no session depending on config.
+           // If Supabase is set to confirm email, we show the message.
+           if (data.user.identities && data.user.identities.length === 0) {
+              setError("This email is already registered. Please Sign In instead.");
+              setAuthMode('signin');
+              setStep(1);
+           } else {
+              setSuccessMessage("check_email_verification");
+           }
         }
       }
       
     } catch (err: any) {
-      setError(err.message);
+      let msg = err.message;
+      if (msg.includes("User already registered")) {
+        msg = "This email is already registered. Please sign in.";
+        setAuthMode('signin');
+        setStep(1);
+      }
+      setError(msg);
       setLoading(false);
     }
   };
@@ -257,7 +278,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
               </div>
               
               {error && (
-                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-start gap-3 text-red-200 text-sm">
+                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-start gap-3 text-red-200 text-sm animate-pulse">
                   <AlertCircle size={16} className="mt-0.5 shrink-0" />
                   <p>{error}</p>
                 </div>
@@ -278,12 +299,19 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-yawai-gold transition-colors" size={20} />
                   <input 
-                    type="password" 
+                    type={showPassword ? "text" : "password"} 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-yawai-gold focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                    className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl py-4 pl-12 pr-12 focus:ring-2 focus:ring-yawai-gold focus:border-transparent outline-none transition-all placeholder:text-slate-600"
                     placeholder="Password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors p-1"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </div>
 
