@@ -17,6 +17,7 @@ import Volunteer from './pages/Volunteer';
 import Donate from './pages/Donate';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
+import LandingPage from './pages/LandingPage';
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -48,7 +49,7 @@ const isProfileComplete = (user: UserType) => {
 const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null, onLogout: () => void }> = ({ children, user, onLogout }) => {
   const { logoUrl } = useLogo();
   
-  // If no user, OR user exists but hasn't completed onboarding (name is 'User'), render simple layout
+  // If no user, or profile incomplete, just render content without sidebar (handled by LandingPage or Onboarding)
   if (!user || !isProfileComplete(user)) return <>{children}</>;
 
   const navItems = [
@@ -254,11 +255,8 @@ const App: React.FC = () => {
     <LogoProvider>
       <BrowserRouter>
         <Routes>
-          {/* Admin Routes - Strictly Separated */}
-          {/* 1. Login Page at /admin */}
+          {/* Admin Routes */}
           <Route path="/admin" element={<AdminLogin />} />
-          
-          {/* 2. Protected Admin Dashboard and Sub-pages */}
           <Route element={<ProtectedAdminRoute user={user} />}>
              <Route path="/admin/dashboard" element={<AdminDashboard />} />
              <Route path="/admin/social" element={<AdminSocial />} />
@@ -267,18 +265,38 @@ const App: React.FC = () => {
              <Route path="/admin/settings" element={<AdminSettings />} />
           </Route>
 
-          {/* Public Routes */}
+          {/* Public / User Routes */}
           <Route path="*" element={
             <PublicLayout user={user} onLogout={handleLogout}>
               <Routes>
-                {/* Render Dashboard ONLY if profile is complete, otherwise Onboarding */}
-                <Route path="/" element={user && isProfileComplete(user) ? <Dashboard user={user} /> : <Onboarding user={user} />} />
-                <Route path="/programs" element={<Programs />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/opportunities" element={<Opportunities />} />
-                <Route path="/volunteer" element={<Volunteer user={user} />} />
-                <Route path="/donate" element={<Donate user={user} />} />
-                <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
+                {/* 
+                   ROOT LOGIC:
+                   1. If !user => Landing Page
+                   2. If user && !complete => Profile Setup (Onboarding)
+                   3. If user && complete => Dashboard
+                */}
+                <Route path="/" element={
+                  user 
+                    ? (isProfileComplete(user) ? <Dashboard user={user} /> : <Navigate to="/complete-profile" replace />)
+                    : <LandingPage />
+                } />
+
+                {/* Auth Routes */}
+                <Route path="/login" element={!user ? <Onboarding initialAuthMode="signin" /> : <Navigate to="/" replace />} />
+                <Route path="/signup" element={!user ? <Onboarding initialAuthMode="signup" /> : <Navigate to="/" replace />} />
+                
+                {/* Profile Completion Route (Protected, for logged in but incomplete users) */}
+                <Route path="/complete-profile" element={
+                    user ? (isProfileComplete(user) ? <Navigate to="/" replace /> : <Onboarding user={user} />) : <Navigate to="/login" replace />
+                } />
+
+                {/* App Pages (Protected) */}
+                <Route path="/programs" element={user ? <Programs /> : <Navigate to="/login" />} />
+                <Route path="/events" element={user ? <Events /> : <Navigate to="/login" />} />
+                <Route path="/opportunities" element={user ? <Opportunities /> : <Navigate to="/login" />} />
+                <Route path="/volunteer" element={user ? <Volunteer user={user} /> : <Navigate to="/login" />} />
+                <Route path="/donate" element={user ? <Donate user={user} /> : <Navigate to="/login" />} />
+                <Route path="/profile" element={user ? <Profile user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
               </Routes>
             </PublicLayout>
           } />

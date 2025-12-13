@@ -4,9 +4,11 @@ import { UserRole, User } from '../types';
 import { ArrowRight, Star, Heart, CheckCircle2, Loader2, Mail, Lock, User as UserIcon, AlertCircle, Facebook, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useLogo } from '../contexts/LogoContext';
+import { useNavigate } from 'react-router-dom';
 
 interface OnboardingProps {
   user?: User | null;
+  initialAuthMode?: 'signin' | 'signup';
 }
 
 const GoogleIcon = () => (
@@ -18,8 +20,8 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
+const Onboarding: React.FC<OnboardingProps> = ({ user, initialAuthMode }) => {
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>(initialAuthMode || 'signup');
   const [viewMode, setViewMode] = useState<'auth' | 'forgot-password'>('auth');
   const [step, setStep] = useState(1); // 1: Auth Form, 2: Profile Setup
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null); // For Forgot Password / Email verification
   const [showPassword, setShowPassword] = useState(false);
   const { logoUrl } = useLogo();
+  const navigate = useNavigate();
 
   // Form Data
   const [email, setEmail] = useState('');
@@ -231,6 +234,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ user }) => {
         <div className="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] bg-yawai-gold/10 rounded-full blur-[100px] animate-pulse"></div>
         <div className="absolute -bottom-[20%] -left-[10%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]"></div>
       </div>
+
+      {/* Back Button for non-step 2 contexts */}
+      {!user && step === 1 && (
+        <button 
+          onClick={() => navigate('/')} 
+          className="absolute top-6 left-6 z-20 text-white/50 hover:text-white flex items-center gap-2 transition-colors font-medium text-sm"
+        >
+          <ArrowLeft size={18} /> Back to Home
+        </button>
+      )}
 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo Area */}
