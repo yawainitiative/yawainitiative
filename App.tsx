@@ -41,8 +41,9 @@ const ScrollToTop = () => {
 
 // Helper to determine if profile is fully set up
 const isProfileComplete = (user: UserType) => {
-  // If name is default 'User', we consider it incomplete
-  return user.name && user.name !== 'User';
+  // A profile is complete if they have a real name (not default 'User')
+  // AND they have selected at least one interest (ensures they went through onboarding)
+  return user.name && user.name !== 'User' && user.interests && user.interests.length > 0;
 };
 
 // Public Layout Component

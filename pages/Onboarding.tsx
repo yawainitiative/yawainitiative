@@ -38,12 +38,19 @@ const Onboarding: React.FC<OnboardingProps> = ({ user, initialAuthMode }) => {
   const [role, setRole] = useState<UserRole>('user');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
-  // Effect to jump to step 2 if user is already technically signed in but has generic name
+  // Effect to handle existing users needing profile completion (e.g. from Google Auth)
   useEffect(() => {
-    if (user && user.name === 'User') {
+    if (user) {
+      // If user exists, we skip Step 1 and go straight to profile completion
       setStep(2);
-      // Logic for existing user profile completion
-      setAuthMode('signup'); // UI Mode
+      
+      // Pre-fill data from existing user object
+      if (user.name && user.name !== 'User') setFullName(user.name);
+      if (user.role) setRole(user.role);
+      if (user.interests) setSelectedInterests(user.interests);
+      
+      // Ensure we are in "signup" UI mode for the profile completion step
+      setAuthMode('signup'); 
     }
   }, [user]);
 
@@ -138,6 +145,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ user, initialAuthMode }) => {
     setLoading(true);
     setError(null);
 
+    // Basic Validation for Step 2
+    if (!fullName.trim()) {
+      setError("Please enter your full name.");
+      setLoading(false);
+      return;
+    }
+
     try {
       if (user) {
         // CASE 1: Existing User (Logged in but incomplete profile)
@@ -151,7 +165,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ user, initialAuthMode }) => {
         });
         if (error) throw error;
         
-        // Force reload to ensure App.tsx picks up the new metadata
+        // Force reload to ensure App.tsx picks up the new metadata immediately
         window.location.reload();
 
       } else {
@@ -266,20 +280,22 @@ const Onboarding: React.FC<OnboardingProps> = ({ user, initialAuthMode }) => {
           
           {step === 1 && viewMode === 'auth' && (
             <div className="space-y-6">
-              <div className="flex gap-4 p-1 bg-black/20 rounded-xl mb-6">
-                 <button 
-                  onClick={() => setAuthMode('signup')}
-                  className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${authMode === 'signup' ? 'bg-yawai-gold text-yawai-blue shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                 >
-                   Sign Up
-                 </button>
-                 <button 
-                  onClick={() => setAuthMode('signin')}
-                  className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${authMode === 'signin' ? 'bg-yawai-gold text-yawai-blue shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                 >
-                   Sign In
-                 </button>
-              </div>
+              {!user && (
+                <div className="flex gap-4 p-1 bg-black/20 rounded-xl mb-6">
+                   <button 
+                    onClick={() => setAuthMode('signup')}
+                    className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${authMode === 'signup' ? 'bg-yawai-gold text-yawai-blue shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                   >
+                     Sign Up
+                   </button>
+                   <button 
+                    onClick={() => setAuthMode('signin')}
+                    className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${authMode === 'signin' ? 'bg-yawai-gold text-yawai-blue shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                   >
+                     Sign In
+                   </button>
+                </div>
+              )}
 
               <div className="text-center mb-4">
                 <h2 className="text-2xl font-bold text-white mb-1">
