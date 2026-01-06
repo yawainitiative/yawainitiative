@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit3, Trash2, Calendar, Briefcase, BookOpen, Filter, X, Loader2, Image as ImageIcon, Save, RefreshCw, AlertCircle, Upload } from 'lucide-react';
+import { Plus, Edit3, Trash2, Calendar, Briefcase, BookOpen, Filter, X, Loader2, Image as ImageIcon, Save, RefreshCw, AlertCircle, Upload, HardDrive } from 'lucide-react';
 import { contentService } from '../../services/contentService';
+import { supabase } from '../../services/supabase';
 
 const AdminContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'programs' | 'events' | 'opportunities'>('programs');
@@ -10,6 +11,7 @@ const AdminContent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [bucketStatus, setBucketStatus] = useState<'checking' | 'ok' | 'missing'>('checking');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
@@ -29,6 +31,16 @@ const AdminContent: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
 
+  const checkBucket = async () => {
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const exists = buckets?.some(b => b.name === 'content');
+      setBucketStatus(exists ? 'ok' : 'missing');
+    } catch (e) {
+      setBucketStatus('missing');
+    }
+  };
+
   const loadContent = async () => {
     setLoading(true);
     try {
@@ -46,6 +58,7 @@ const AdminContent: React.FC = () => {
 
   useEffect(() => {
     loadContent();
+    checkBucket();
   }, [activeTab]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +101,7 @@ const AdminContent: React.FC = () => {
         try {
           imageUrl = await contentService.uploadImage(selectedFile);
         } catch (uploadErr: any) {
-          throw new Error(`Image upload failed: ${uploadErr.message}. Make sure you created a public 'content' bucket in Supabase Storage.`);
+          throw new Error(`Bucket not found. Please create a public 'content' bucket in your Supabase project under Storage.`);
         }
       }
 
@@ -168,6 +181,7 @@ const AdminContent: React.FC = () => {
               setSelectedFile(null);
               setUploadPreview(null);
               setIsModalOpen(true);
+              checkBucket();
             }}
             className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg active:scale-95"
           >
@@ -354,12 +368,20 @@ const AdminContent: React.FC = () => {
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Display Image</label>
                     
                     <div className="flex flex-col gap-4">
+                      {bucketStatus === 'missing' && (
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-700 text-xs">
+                          <HardDrive size={18} />
+                          <p><strong>Warning:</strong> The 'content' bucket is missing in Supabase. Image uploads will fail. Please create it and set it to public.</p>
+                        </div>
+                      )}
+
                       {/* Upload Box */}
                       <div 
                         onClick={() => fileInputRef.current?.click()}
                         className={`
                           group border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all
                           ${uploadPreview ? 'border-green-400 bg-green-50/30' : 'border-slate-200 hover:border-red-400 bg-slate-50/50'}
+                          ${bucketStatus === 'missing' ? 'opacity-50 grayscale cursor-not-allowed' : ''}
                         `}
                       >
                         <input 
@@ -368,6 +390,7 @@ const AdminContent: React.FC = () => {
                           onChange={handleFileChange} 
                           className="hidden" 
                           accept="image/*" 
+                          disabled={bucketStatus === 'missing'}
                         />
                         
                         {uploadPreview ? (
