@@ -78,52 +78,52 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   return (
     <div className="space-y-10 pb-20 md:pb-0">
       
-      {/* Sleek Welcome Impact Card */}
+      {/* Sleek Welcome Impact Card - Reduced Mobile Height */}
       <section className={`transition-all duration-700 transform ${showGreeting ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-yawai-blue via-slate-900 to-yawai-blue p-8 md:p-10 shadow-2xl border border-white/5">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-yawai-blue via-slate-900 to-yawai-blue p-6 md:p-10 shadow-2xl border border-white/5">
            {/* Background Decorative Icon */}
-           <div className="absolute -right-10 -bottom-10 opacity-5 transform rotate-12">
+           <div className="absolute -right-10 -bottom-10 opacity-5 transform rotate-12 pointer-events-none">
               <Sparkles size={240} className="text-white" />
            </div>
            <div className="absolute left-0 top-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
 
-           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-              <div className="space-y-4">
+           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8">
+              <div className="space-y-3 md:space-y-4">
                  <div className="inline-flex items-center gap-2 bg-yawai-gold/20 backdrop-blur-md border border-yawai-gold/30 px-3 py-1 rounded-full">
-                    <Sparkles size={14} className="text-yawai-gold" />
-                    <span className="text-[10px] font-black text-yawai-goldLight uppercase tracking-widest">Active Journey</span>
+                    <Sparkles size={12} className="text-yawai-gold" />
+                    <span className="text-[9px] md:text-[10px] font-black text-yawai-goldLight uppercase tracking-widest">Active Journey</span>
                  </div>
                  
                  <div>
-                    <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">
+                    <h2 className="text-2xl md:text-5xl font-black text-white leading-tight">
                        Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-yawai-gold to-orange-400">{user.name.split(' ')[0]}</span>
                     </h2>
-                    <p className="text-slate-400 text-lg font-medium mt-2 max-w-md">
-                       Your impact journey continues here. Ready to make a difference today?
+                    <p className="text-slate-400 text-sm md:text-lg font-medium mt-1 md:mt-2 max-w-md">
+                       Your impact journey continues here. Ready to make a difference?
                     </p>
                  </div>
 
-                 <div className="flex flex-wrap gap-3 pt-2">
-                    <Link to="/profile" className="bg-white text-yawai-blue px-6 py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-yawai-gold transition-colors flex items-center gap-2 group">
-                       My Impact Profile <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                 <div className="flex flex-wrap gap-3 pt-1 md:pt-2">
+                    <Link to="/profile" className="bg-white text-yawai-blue px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm shadow-lg hover:bg-yawai-gold transition-colors flex items-center gap-2 group">
+                       My Impact Profile <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </Link>
-                    <Link to="/donate" className="bg-white/10 backdrop-blur-md border border-white/10 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-white/20 transition-all flex items-center gap-2">
-                       <Heart size={16} className="text-red-500 fill-red-500" /> Support
+                    <Link to="/donate" className="bg-white/10 backdrop-blur-md border border-white/10 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm hover:bg-white/20 transition-all flex items-center gap-2">
+                       <Heart size={14} className="text-red-500 fill-red-500" /> Support
                     </Link>
                  </div>
               </div>
 
-              {/* Quick Progress Stats Panel */}
+              {/* Quick Progress Stats Panel - Tightened Padding */}
               <div className="grid grid-cols-2 gap-3 w-full md:w-auto shrink-0">
-                 <div className="bg-white/5 border border-white/10 backdrop-blur-sm p-5 rounded-3xl flex flex-col items-center justify-center text-center">
-                    <Clock size={20} className="text-yawai-gold mb-2" />
-                    <span className="text-2xl font-black text-white leading-none">{user.volunteerHours || 0}</span>
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Hours</span>
+                 <div className="bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-5 rounded-3xl flex flex-col items-center justify-center text-center">
+                    <Clock size={18} className="text-yawai-gold mb-1 md:mb-2" />
+                    <span className="text-xl md:text-2xl font-black text-white leading-none">{user.volunteerHours || 0}</span>
+                    <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Hours</span>
                  </div>
-                 <div className="bg-white/5 border border-white/10 backdrop-blur-sm p-5 rounded-3xl flex flex-col items-center justify-center text-center">
-                    <Award size={20} className="text-blue-400 mb-2" />
-                    <span className="text-2xl font-black text-white leading-none">0</span>
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Badges</span>
+                 <div className="bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-5 rounded-3xl flex flex-col items-center justify-center text-center">
+                    <Award size={18} className="text-blue-400 mb-1 md:mb-2" />
+                    <span className="text-xl md:text-2xl font-black text-white leading-none">0</span>
+                    <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Badges</span>
                  </div>
               </div>
            </div>
