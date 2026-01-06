@@ -45,7 +45,6 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
   const { logoUrl } = useLogo();
   const { pathname } = useLocation();
   
-  // FIX: Dashboard (/) should NOT hide the layout when a user is logged in
   const isNoLayoutPage = (!user && pathname === '/') || ['/login', '/signup', '/skill-acquisition', '/complete-profile'].includes(pathname);
   
   if (!user || isNoLayoutPage || (user && !isProfileComplete(user) && pathname !== '/complete-profile' && pathname !== '/')) {
