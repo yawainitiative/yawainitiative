@@ -170,19 +170,21 @@ const Programs: React.FC = () => {
         </div>
       )}
 
-      {/* DETAILED VIEW MODAL / SHEET - Increased Z-index for Mobile Navigation clearance */}
+      {/* DETAILED VIEW MODAL / SHEET - Optimized for Bottom Navigation Bar */}
       {selectedProgram && (
-        <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
+        <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 animate-fade-in">
+          {/* Backdrop remains full-screen */}
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={closeDetail} />
           
-          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] sm:rounded-[3rem] rounded-t-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up">
+          {/* On mobile, card is bottom-20 to sit exactly above the Nav Bar (h-20) */}
+          <div className="relative bg-white w-full max-w-2xl max-h-[75vh] sm:max-h-[90vh] sm:rounded-[3rem] rounded-t-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up mb-20 sm:mb-0 sm:mx-4">
             
             {/* Mobile Grabber Handle */}
             <div className="sm:hidden w-12 h-1 bg-slate-200 rounded-full mx-auto my-3 absolute top-0 left-1/2 -translate-x-1/2 z-30" />
 
             {/* Modal Header/Image */}
             {!isEnrolling && (
-              <div className="relative h-48 sm:h-64 w-full shrink-0">
+              <div className="relative h-40 sm:h-64 w-full shrink-0">
                 <img src={selectedProgram.image} className="w-full h-full object-cover" alt="" />
                 <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
                 <button 
@@ -199,20 +201,20 @@ const Programs: React.FC = () => {
               </div>
             )}
 
-            {/* Modal Content - Added Bottom Padding for Mobile clearing */}
-            <div className={`flex-1 overflow-y-auto no-scrollbar ${isEnrolling ? 'p-0' : 'p-5 sm:p-10 pt-4 pb-12'}`}>
+            {/* Modal Content - pb-10 added for safe scrolling clearance */}
+            <div className={`flex-1 overflow-y-auto no-scrollbar ${isEnrolling ? 'p-0' : 'p-6 sm:p-10 pt-4 pb-10'}`}>
               {enrollSuccess ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-20 px-10 animate-fade-in">
-                  <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6 animate-bounce">
-                    <CheckCircle2 size={48} />
+                <div className="flex flex-col items-center justify-center h-full text-center py-10 px-6 animate-fade-in">
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6 animate-bounce">
+                    <CheckCircle2 size={40} />
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Application Received!</h3>
-                  <p className="text-slate-500 max-w-sm mx-auto mb-10 text-sm sm:text-lg">
+                  <h3 className="text-2xl font-black text-slate-900 mb-2">Application Received!</h3>
+                  <p className="text-slate-500 max-w-sm mx-auto mb-10 text-sm">
                     Your interest in <strong>{selectedProgram.title}</strong> has been logged. Our team will contact you shortly.
                   </p>
                   <button 
                     onClick={closeDetail}
-                    className="w-full sm:w-auto bg-yawai-blue text-white px-10 py-4 rounded-2xl font-bold transition-all shadow-xl active:scale-95 text-lg"
+                    className="w-full bg-yawai-blue text-white py-4 rounded-2xl font-bold transition-all shadow-xl active:scale-95"
                   >
                     Return to Programs
                   </button>
@@ -223,61 +225,56 @@ const Programs: React.FC = () => {
                   <div className="bg-yawai-blue p-6 sm:p-10 text-center text-white relative shrink-0">
                      <button 
                         onClick={() => setIsEnrolling(false)} 
-                        className="absolute top-4 sm:top-6 left-4 sm:left-6 text-slate-400 hover:text-white transition-colors flex items-center gap-1 font-bold text-xs sm:text-sm"
+                        className="absolute top-4 left-4 text-slate-400 hover:text-white transition-colors flex items-center gap-1 font-bold text-xs"
                      >
                         <ArrowLeft size={16} /> Back
                      </button>
-                     <div className="absolute top-0 left-0 w-full h-full opacity-5 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
                      <Users size={32} className="mx-auto mb-4 text-yawai-gold" />
                      <h2 className="text-xl sm:text-3xl font-black mb-1">Registration</h2>
                      <p className="text-slate-400 text-[10px] sm:text-sm font-medium">{selectedProgram.title}</p>
                   </div>
                   
-                  <form onSubmit={handleEnrollSubmit} className="p-6 sm:p-10 space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Full Name</label>
-                        <input 
-                          required
-                          type="text" 
-                          placeholder="John Doe"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 sm:py-4 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
-                          value={formData.fullName}
-                          onChange={e => setFormData({...formData, fullName: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email Address</label>
-                        <input 
-                          required
-                          type="email" 
-                          placeholder="johndoe@email.com"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 sm:py-4 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
-                          value={formData.email}
-                          onChange={e => setFormData({...formData, email: e.target.value})}
-                        />
-                      </div>
+                  <form onSubmit={handleEnrollSubmit} className="p-6 sm:p-10 space-y-5">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Full Name</label>
+                      <input 
+                        required
+                        type="text" 
+                        placeholder="John Doe"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
+                        value={formData.fullName}
+                        onChange={e => setFormData({...formData, fullName: e.target.value})}
+                      />
                     </div>
-
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email Address</label>
+                      <input 
+                        required
+                        type="email" 
+                        placeholder="johndoe@email.com"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
+                        value={formData.email}
+                        onChange={e => setFormData({...formData, email: e.target.value})}
+                      />
+                    </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Phone Number</label>
                       <input 
                         required
                         type="tel" 
                         placeholder="+234..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 sm:py-4 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
                         value={formData.phone}
                         onChange={e => setFormData({...formData, phone: e.target.value})}
                       />
                     </div>
-
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Why join this track?</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Motivation</label>
                       <textarea 
                         required
                         rows={3}
-                        placeholder="Your goals..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 sm:py-4 focus:border-yawai-gold outline-none transition-all resize-none font-medium text-sm"
+                        placeholder="Why do you want to join?"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:border-yawai-gold outline-none transition-all resize-none font-medium text-sm"
                         value={formData.motivation}
                         onChange={e => setFormData({...formData, motivation: e.target.value})}
                       />
@@ -286,61 +283,54 @@ const Programs: React.FC = () => {
                     <button 
                       type="submit"
                       disabled={enrollLoading}
-                      className="w-full bg-yawai-blue text-white py-4 sm:py-5 rounded-[1.5rem] font-black text-base sm:text-lg hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95"
+                      className="w-full bg-yawai-blue text-white py-4 rounded-[1.5rem] font-black text-base hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95"
                     >
-                      {enrollLoading ? (
-                        <Loader2 size={24} className="animate-spin" />
-                      ) : (
-                        <>Enroll Now <Send size={20} className="text-yawai-gold" /></>
-                      )}
+                      {enrollLoading ? <Loader2 size={24} className="animate-spin" /> : <>Enroll Now <Send size={20} className="text-yawai-gold" /></>}
                     </button>
                   </form>
                 </div>
               ) : (
                 <div className="animate-fade-in">
-                  <div className="flex justify-between items-start gap-4 mb-4 sm:mb-6">
-                      <h3 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
+                  <div className="flex justify-between items-start gap-4 mb-4">
+                      <h3 className="text-2xl font-black text-slate-900 leading-tight">
                         {selectedProgram.title}
                       </h3>
-                      <div className="flex items-center gap-2 text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 shrink-0">
-                        <Clock size={14} />
+                      <div className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 shrink-0">
+                        <Clock size={12} />
                         <span className="text-[10px] font-bold uppercase tracking-widest">{selectedProgram.duration}</span>
                       </div>
                   </div>
 
-                  <div className="space-y-5 sm:space-y-6">
+                  <div className="space-y-5">
                       <div>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 sm:mb-3">Program Details</h4>
-                        <p className="text-slate-600 text-sm sm:text-lg leading-relaxed font-medium">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Program Details</h4>
+                        <p className="text-slate-600 text-sm leading-relaxed font-medium">
                           {selectedProgram.description}
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 sm:gap-4 py-4 sm:py-6 border-y border-slate-50">
-                        <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-slate-50 rounded-xl">
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
-                              <CheckCircle2 size={16} />
-                            </div>
-                            <span className="text-[9px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">Certification</span>
+                      <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-50">
+                        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl">
+                            <CheckCircle2 size={16} className="text-green-600" />
+                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Certification</span>
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-slate-50 rounded-xl">
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                              <UsersIcon size={16} />
-                            </div>
-                            <span className="text-[9px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">Mentorship</span>
+                        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl">
+                            <UsersIcon size={16} className="text-blue-600" />
+                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Mentorship</span>
                         </div>
                       </div>
                   </div>
 
-                  <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                  {/* Enrollment Button - Fully visible above bottom-20 margin */}
+                  <div className="mt-8 flex gap-3">
                     <button 
                       onClick={() => setIsEnrolling(true)}
-                      className="flex-1 bg-yawai-blue text-white py-4 sm:py-5 rounded-[1.5rem] font-black text-base sm:text-lg hover:bg-slate-800 transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 active:scale-95"
+                      className="flex-1 bg-yawai-blue text-white py-4 rounded-[1.5rem] font-black text-base hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95"
                     >
                         Enroll in Track <ArrowRight size={18} className="text-yawai-gold" />
                     </button>
-                    <button className="p-4 sm:p-5 bg-white border border-slate-200 text-slate-400 rounded-[1.5rem] hover:text-yawai-blue transition-colors shadow-sm hidden sm:block">
-                        <Share2 size={24} />
+                    <button className="p-4 bg-white border border-slate-200 text-slate-400 rounded-[1.5rem] hover:text-yawai-blue transition-colors shadow-sm hidden sm:block">
+                        <Share2 size={20} />
                     </button>
                   </div>
                 </div>
