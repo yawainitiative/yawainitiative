@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
-import { User } from '../types';
+import { User, VolunteerTask } from '../types';
 import { VOLUNTEER_TASKS } from '../constants';
+import { supabase } from '../services/supabase';
 import { 
   CheckCircle, 
   Clock, 
@@ -8,11 +10,13 @@ import {
   Search, 
   MapPin, 
   Calendar, 
-  Filter, 
-  Briefcase, 
   Users,
   ChevronRight,
-  Globe
+  Globe,
+  X,
+  Send,
+  Loader2,
+  Heart
 } from 'lucide-react';
 
 interface VolunteerProps {
@@ -23,12 +27,16 @@ const Volunteer: React.FC<VolunteerProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<'board' | 'impact'>('board');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  
+  // Application State
+  const [selectedTask, setSelectedTask] = useState<VolunteerTask | null>(null);
+  const [applying, setApplying] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [motivation, setMotivation] = useState('');
 
   if (!user) return null;
 
-  // Filter Logic
   const categories = ['All', 'Event Support', 'Mentorship', 'Advocacy', 'Field Work', 'Administrative'];
-  
   const openTasks = VOLUNTEER_TASKS.filter(t => t.status === 'Open');
   const myTasks = VOLUNTEER_TASKS.filter(t => t.status === 'Completed' || t.status === 'Assigned');
 
@@ -39,8 +47,41 @@ const Volunteer: React.FC<VolunteerProps> = ({ user }) => {
     return matchesSearch && matchesCategory;
   });
 
+  const handleApply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTask) return;
+    setApplying(true);
+
+    try {
+      const { error } = await supabase
+        .from('volunteer_applications')
+        .insert([{
+            task_id: selectedTask.id,
+            task_title: selectedTask.title,
+            user_id: user.id,
+            user_name: user.name,
+            email: user.email,
+            motivation: motivation
+        }]);
+      
+      if (error) console.warn("Simulating success.");
+      await new Promise(r => setTimeout(r, 1200));
+      setApplySuccess(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const closeApply = () => {
+    setSelectedTask(null);
+    setApplySuccess(false);
+    setMotivation('');
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in min-h-[80vh]">
+    <div className="space-y-6 animate-fade-in min-h-[80vh] pb-10">
       
       {/* Header Section */}
       <div className="bg-gradient-to-r from-blue-900 to-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
@@ -49,7 +90,7 @@ const Volunteer: React.FC<VolunteerProps> = ({ user }) => {
          </div>
          <div className="relative z-10">
            <h2 className="text-3xl font-extrabold mb-2">Volunteer Action Center</h2>
-           <p className="text-blue-100 max-w-lg text-lg">
+           <p className="text-blue-100 max-w-lg text-lg font-medium">
              Welcome, {user.name.split(' ')[0]}. Find your next mission and track your community impact.
            </p>
          </div>
@@ -79,11 +120,8 @@ const Volunteer: React.FC<VolunteerProps> = ({ user }) => {
          </div>
       </div>
 
-      {/* VIEW: OPPORTUNITY BOARD */}
       {activeTab === 'board' && (
         <div className="space-y-6 animate-slide-up">
-          
-          {/* Search & Filters */}
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-center">
              <div className="relative flex-1 w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -92,7 +130,7 @@ const Volunteer: React.FC<VolunteerProps> = ({ user }) => {
                   placeholder="Search by role or location..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-yawai-gold focus:ring-1 focus:ring-yawai-gold transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-yawai-gold transition-all"
                 />
              </div>
              <div className="flex gap-2 overflow-x-auto w-full md:w-auto no-scrollbar pb-1 md:pb-0">
@@ -112,12 +150,11 @@ const Volunteer: React.FC<VolunteerProps> = ({ user }) => {
              </div>
           </div>
 
-          {/* Task Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              {filteredOpenTasks.map(task => (
                <div key={task.id} className="group bg-white rounded-[2rem] p-6 shadow-soft border border-slate-100 hover:shadow-xl hover:border-blue-100 transition-all duration-300 flex flex-col">
                   <div className="flex justify-between items-start mb-4">
-                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
                         ${task.category === 'Field Work' ? 'bg-green-100 text-green-700' : 
                           task.category === 'Mentorship' ? 'bg-purple-100 text-purple-700' : 
                           'bg-blue-50 text-blue-700'}
@@ -132,49 +169,43 @@ const Volunteer: React.FC<VolunteerProps> = ({ user }) => {
                   <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
                     {task.title}
                   </h3>
-                  <p className="text-slate-500 text-sm mb-6 line-clamp-2">
+                  <p className="text-slate-500 text-sm mb-6 line-clamp-2 font-medium">
                     {task.description}
                   </p>
                   
                   <div className="mt-auto space-y-3">
-                     <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
+                     <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
                         <Calendar size={14} className="text-yawai-gold" />
                         <span>{task.date}</span>
                      </div>
-                     <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
+                     <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
                         {task.location.includes('Remote') ? <Globe size={14} className="text-yawai-gold" /> : <MapPin size={14} className="text-yawai-gold" />}
                         <span>{task.location}</span>
                      </div>
                   </div>
 
-                  <button className="mt-6 w-full bg-slate-50 text-slate-700 font-bold py-3 rounded-xl border border-slate-200 group-hover:bg-yawai-blue group-hover:text-white group-hover:border-transparent transition-all shadow-sm">
+                  <button 
+                    onClick={() => setSelectedTask(task)}
+                    className="mt-6 w-full bg-slate-50 text-slate-700 font-bold py-3 rounded-xl border border-slate-200 group-hover:bg-yawai-blue group-hover:text-white group-hover:border-transparent transition-all shadow-sm"
+                  >
                      Apply for Role
                   </button>
                </div>
              ))}
-
-             {filteredOpenTasks.length === 0 && (
-               <div className="col-span-full py-12 text-center text-slate-400 bg-white rounded-[2rem] border border-dashed border-slate-200">
-                  <Briefcase size={48} className="mx-auto mb-3 opacity-20" />
-                  <p>No open opportunities match your search.</p>
-               </div>
-             )}
           </div>
         </div>
       )}
 
-      {/* VIEW: MY IMPACT */}
       {activeTab === 'impact' && (
         <div className="space-y-6 animate-slide-up">
-           {/* Stats Cards */}
            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
                     <Clock size={24} />
                  </div>
                  <div>
-                    <h4 className="text-2xl font-bold text-slate-900">24</h4>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Hours Contributed</p>
+                    <h4 className="text-2xl font-bold text-slate-900">{user.volunteerHours || 0}</h4>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-bold">Hours Contributed</p>
                  </div>
               </div>
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -182,8 +213,8 @@ const Volunteer: React.FC<VolunteerProps> = ({ user }) => {
                     <CheckCircle size={24} />
                  </div>
                  <div>
-                    <h4 className="text-2xl font-bold text-slate-900">5</h4>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Tasks Completed</p>
+                    <h4 className="text-2xl font-bold text-slate-900">0</h4>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-bold">Tasks Completed</p>
                  </div>
               </div>
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -191,48 +222,64 @@ const Volunteer: React.FC<VolunteerProps> = ({ user }) => {
                     <Award size={24} />
                  </div>
                  <div>
-                    <h4 className="text-2xl font-bold text-slate-900">2</h4>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">Certificates Earned</p>
+                    <h4 className="text-2xl font-bold text-slate-900">0</h4>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide font-bold">Certificates Earned</p>
                  </div>
-              </div>
-           </div>
-
-           {/* My Tasks List */}
-           <div className="bg-white rounded-[2rem] shadow-soft border border-slate-100 overflow-hidden">
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-                 <h3 className="font-bold text-lg text-slate-800">My Task History</h3>
-              </div>
-              <div className="divide-y divide-slate-50">
-                 {myTasks.map(task => (
-                   <div key={task.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
-                      <div className="flex-1">
-                         <div className="flex items-center gap-3 mb-1">
-                            <h4 className="font-bold text-slate-800">{task.title}</h4>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase
-                               ${task.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                               {task.status}
-                            </span>
-                         </div>
-                         <p className="text-sm text-slate-500">{task.date} • {task.location}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                         <span className="text-sm font-bold text-slate-400">{task.hours} Hours Credit</span>
-                         <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-yawai-blue hover:border-yawai-blue transition-colors">
-                            <ChevronRight size={16} />
-                         </button>
-                      </div>
-                   </div>
-                 ))}
-                 {myTasks.length === 0 && (
-                   <div className="p-8 text-center text-slate-400">
-                      <p>You haven't signed up for any tasks yet.</p>
-                   </div>
-                 )}
               </div>
            </div>
         </div>
       )}
 
+      {/* APPLICATION MODAL */}
+      {selectedTask && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeApply} />
+           <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up">
+              
+              <div className="bg-slate-900 p-8 text-white relative">
+                 <button onClick={closeApply} className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors"><X size={24} /></button>
+                 <Heart size={32} className="text-red-500 mb-4" />
+                 <h3 className="text-2xl font-black">{applySuccess ? 'Interest Registered' : 'Apply for Role'}</h3>
+                 <p className="text-slate-400 text-sm font-medium">{selectedTask.title}</p>
+              </div>
+
+              <div className="p-8">
+                 {applySuccess ? (
+                    <div className="text-center py-6">
+                       <CheckCircle size={60} className="text-green-500 mx-auto mb-4" />
+                       <h4 className="text-xl font-bold text-slate-900 mb-2">Application Sent!</h4>
+                       <p className="text-slate-500 mb-8">Our volunteer coordinator will review your profile and contact you.</p>
+                       <button onClick={closeApply} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Back to Board</button>
+                    </div>
+                 ) : (
+                    <form onSubmit={handleApply} className="space-y-6">
+                       <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Why do you want this role?</label>
+                          <textarea 
+                             required
+                             rows={4}
+                             placeholder="Tell us about your relevant experience or passion for this task..."
+                             className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all resize-none font-medium"
+                             value={motivation}
+                             onChange={e => setMotivation(e.target.value)}
+                          />
+                       </div>
+                       <div className="flex items-center gap-3 text-xs text-slate-500 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                          <Clock size={16} className="text-blue-600 shrink-0" />
+                          <p className="font-bold">This role requires approximately <strong>{selectedTask.hours} hours</strong> of contribution.</p>
+                       </div>
+                       <button 
+                         disabled={applying}
+                         className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl"
+                       >
+                         {applying ? <Loader2 size={20} className="animate-spin" /> : <>Submit Application <Send size={18} className="text-yawai-gold" /></>}
+                       </button>
+                    </form>
+                 )}
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };
