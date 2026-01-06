@@ -27,6 +27,7 @@ import AdminSocial from './pages/admin/AdminSocial';
 import AdminContent from './pages/admin/AdminContent';
 import AdminVolunteers from './pages/admin/AdminVolunteers';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminApplications from './pages/admin/AdminApplications';
 import AdminLayout from './layouts/AdminLayout';
 
 const ScrollToTop = () => {
@@ -255,6 +256,7 @@ const App: React.FC = () => {
           <Route path="/admin" element={<AdminLogin />} />
           <Route element={<ProtectedAdminRoute user={user} />}>
              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+             <Route path="/admin/applications" element={<AdminApplications />} />
              <Route path="/admin/social" element={<AdminSocial />} />
              <Route path="/admin/content" element={<AdminContent />} />
              <Route path="/admin/volunteers" element={<AdminVolunteers />} />

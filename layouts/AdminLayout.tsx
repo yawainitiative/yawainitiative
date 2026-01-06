@@ -9,7 +9,8 @@ import {
   Settings, 
   LogOut, 
   Menu,
-  ShieldAlert
+  ShieldAlert,
+  ClipboardList
 } from 'lucide-react';
 import { User } from '../types';
 import { supabase } from '../services/supabase';
@@ -25,12 +26,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
   const { logoUrl } = useLogo();
 
   const handleLogout = async () => {
+    localStorage.removeItem('yawai_demo_admin');
     await supabase.auth.signOut();
     navigate('/admin'); // Redirect to login page at /admin
   };
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Overview', path: '/admin/dashboard' },
+    { icon: ClipboardList, label: 'Applications', path: '/admin/applications' },
     { icon: Share2, label: 'Social Feed', path: '/admin/social' },
     { icon: FileText, label: 'Content Manager', path: '/admin/content' },
     { icon: Users, label: 'Volunteer Hub', path: '/admin/volunteers' },
@@ -40,7 +43,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
     <div className="min-h-screen bg-slate-100 flex font-sans">
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-[100] w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:relative lg:translate-x-0
       `}>
@@ -102,7 +105,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="bg-white h-16 border-b border-slate-200 flex items-center justify-between px-6 lg:px-10">
+        <header className="bg-white h-16 border-b border-slate-200 flex items-center justify-between px-6 lg:px-10 shrink-0">
           <button 
             className="lg:hidden p-2 -ml-2 text-slate-500"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
