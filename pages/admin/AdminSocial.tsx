@@ -3,18 +3,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, RefreshCw, ExternalLink, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
 import { SocialPost } from '../../types';
 
-// Mock initial data
-const INITIAL_POSTS: SocialPost[] = [
-  {
-    id: '1',
-    platform: 'instagram',
-    thumbnail: 'https://picsum.photos/400/400?random=1',
-    caption: 'Great time at the summit!',
-    redirectUrl: 'https://instagram.com/p/123',
-    timestamp: '2h ago',
-    likes: 120
-  }
-];
+const INITIAL_POSTS: SocialPost[] = [];
 
 const AdminSocial: React.FC = () => {
   const [posts, setPosts] = useState<SocialPost[]>(INITIAL_POSTS);
@@ -24,14 +13,12 @@ const AdminSocial: React.FC = () => {
   const [autoFetch, setAutoFetch] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Real URL Fetching using Microlink API
   const handleFetchPost = async () => {
     if (!url) return;
     setLoading(true);
     setError(null);
     
     try {
-      // Use Microlink API to get metadata (free tier, public)
       const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
       const result = await response.json();
 
@@ -41,12 +28,11 @@ const AdminSocial: React.FC = () => {
         const newPost: SocialPost = {
           id: Date.now().toString(),
           platform: platform as any,
-          // Prioritize screenshot/image from meta, fallback to logo or placeholder
           thumbnail: image?.url || logo?.url || 'https://via.placeholder.com/400?text=No+Preview',
           caption: description || title || `New post from ${platform}`,
           redirectUrl: url,
           timestamp: 'Just now',
-          likes: 0 // New posts start with 0 likes
+          likes: 0
         };
 
         setPosts([newPost, ...posts]);
@@ -63,7 +49,7 @@ const AdminSocial: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to remove this post from the feed?")) {
+    if (window.confirm("Are you sure you want to remove this post?")) {
       setPosts(posts.filter(p => p.id !== id));
     }
   };
@@ -73,10 +59,10 @@ const AdminSocial: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Social Media Manager</h2>
-          <p className="text-slate-500">Curate the live social feed shown on the app dashboard.</p>
+          <p className="text-slate-500">Add URLs to populate the live feed.</p>
         </div>
         <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
-           <span className="text-sm font-medium text-slate-700">Auto-Fetch Background Job</span>
+           <span className="text-sm font-medium text-slate-700">Auto-Fetch</span>
            <button 
              onClick={() => setAutoFetch(!autoFetch)}
              className={`w-10 h-5 rounded-full relative transition-colors duration-300 ${autoFetch ? 'bg-green-500' : 'bg-slate-300'}`}
@@ -86,14 +72,8 @@ const AdminSocial: React.FC = () => {
         </div>
       </div>
 
-      {/* Add New Post */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-         <h3 className="font-bold text-lg mb-4">Add New Post</h3>
-         {error && (
-            <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2">
-              <AlertCircle size={16} /> {error}
-            </div>
-         )}
+         <h3 className="font-bold text-lg mb-4 text-slate-800">Add New Post</h3>
          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             <div className="md:col-span-3">
                <select 
@@ -112,7 +92,7 @@ const AdminSocial: React.FC = () => {
             <div className="md:col-span-7">
                <input 
                  type="text" 
-                 placeholder="Paste post URL here (e.g. https://instagram.com/p/...)" 
+                 placeholder="Paste post URL here..." 
                  value={url}
                  onChange={e => setUrl(e.target.value)}
                  className="w-full border border-slate-300 rounded-lg px-4 py-3 outline-none focus:border-red-500"
@@ -131,7 +111,6 @@ const AdminSocial: React.FC = () => {
          </div>
       </div>
 
-      {/* Active Posts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {posts.map(post => (
           <div key={post.id} className="group bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 relative animate-slide-up">
@@ -143,13 +122,7 @@ const AdminSocial: React.FC = () => {
              </div>
              <div className="p-4">
                <p className="text-slate-600 text-sm line-clamp-2 mb-3 h-10">{post.caption}</p>
-               <div className="flex justify-between items-center text-xs text-slate-400 font-medium border-t border-slate-50 pt-3">
-                 <span>{post.timestamp}</span>
-                 <span>{post.likes} Likes</span>
-               </div>
              </div>
-             
-             {/* Admin Actions Overlay */}
              <div className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
                 <a href={post.redirectUrl} target="_blank" rel="noreferrer" className="p-2 bg-white rounded-full text-slate-900 hover:scale-110 transition-transform">
                   <ExternalLink size={20} />
@@ -163,11 +136,11 @@ const AdminSocial: React.FC = () => {
              </div>
           </div>
         ))}
-        
         {posts.length === 0 && (
-          <div className="col-span-full py-12 text-center text-slate-400 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+          <div className="col-span-full py-20 text-center text-slate-400 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
              <ImageIcon size={48} className="mx-auto mb-2 opacity-20" />
-             <p>No posts in feed. Add a URL above to get started.</p>
+             <p className="font-bold">No active social feed</p>
+             <p className="text-sm">Start by adding a social media post URL above.</p>
           </div>
         )}
       </div>
