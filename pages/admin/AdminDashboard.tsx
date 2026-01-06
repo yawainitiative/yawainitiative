@@ -101,7 +101,7 @@ const AdminDashboard: React.FC = () => {
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
                    <div className="bg-white/50 px-3 py-1 rounded text-[10px] font-bold text-red-800 uppercase">1. Go to Supabase</div>
-                   <div className="bg-white/50 px-3 py-1 rounded text-[10px] font-bold text-red-800 uppercase">2. Storage -> New Bucket</div>
+                   <div className="bg-white/50 px-3 py-1 rounded text-[10px] font-bold text-red-800 uppercase">2. Storage &rarr; New Bucket</div>
                    <div className="bg-white/50 px-3 py-1 rounded text-[10px] font-bold text-red-800 uppercase">3. Name it 'content'</div>
                    <div className="bg-white/50 px-3 py-1 rounded text-[10px] font-bold text-red-800 uppercase">4. Set to Public</div>
                 </div>

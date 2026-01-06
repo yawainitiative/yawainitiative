@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Sparkles,
   Send,
-  ArrowLeft
+  ArrowLeft,
+  Users
 } from 'lucide-react';
 
 const Programs: React.FC = () => {
@@ -52,6 +53,13 @@ const Programs: React.FC = () => {
     setSelectedProgram(null);
     setIsEnrolling(false);
     setEnrollSuccess(false);
+    // Reset form for next time
+    setFormData({
+      fullName: '',
+      email: '',
+      phone: '',
+      motivation: ''
+    });
   };
 
   const handleEnrollSubmit = async (e: React.FormEvent) => {
@@ -189,92 +197,105 @@ const Programs: React.FC = () => {
             )}
 
             {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-10 pt-4">
+            <div className={`flex-1 overflow-y-auto no-scrollbar ${isEnrolling ? 'p-0' : 'p-6 sm:p-10 pt-4'}`}>
               {enrollSuccess ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-10 animate-fade-in">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6 animate-bounce">
-                    <CheckCircle2 size={40} />
+                <div className="flex flex-col items-center justify-center h-full text-center py-20 px-10 animate-fade-in">
+                  <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6 animate-bounce">
+                    <CheckCircle2 size={48} />
                   </div>
-                  <h3 className="text-2xl font-black text-slate-900 mb-2">Application Received!</h3>
-                  <p className="text-slate-500 max-w-sm mx-auto mb-8">
-                    Your interest in <strong>{selectedProgram.title}</strong> has been logged. Our team will contact you shortly.
+                  <h3 className="text-3xl font-black text-slate-900 mb-2">Application Received!</h3>
+                  <p className="text-slate-500 max-w-sm mx-auto mb-10 text-lg">
+                    Your interest in <strong>{selectedProgram.title}</strong> has been logged. Our team will contact you shortly via email.
                   </p>
                   <button 
                     onClick={closeDetail}
-                    className="bg-yawai-blue text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg active:scale-95"
+                    className="bg-yawai-blue text-white px-10 py-4 rounded-2xl font-bold transition-all shadow-xl active:scale-95 text-lg"
                   >
                     Return to Programs
                   </button>
                 </div>
               ) : isEnrolling ? (
-                <div className="animate-fade-in">
-                  <button 
-                    onClick={() => setIsEnrolling(false)} 
-                    className="flex items-center gap-2 text-slate-400 font-bold text-sm mb-6 hover:text-yawai-blue transition-colors"
-                  >
-                    <ArrowLeft size={18} /> Back to Details
-                  </button>
-                  
-                  <div className="mb-8">
-                    <h3 className="text-3xl font-black text-slate-900 leading-tight">Enroll Now</h3>
-                    <p className="text-slate-500 font-medium">Register for {selectedProgram.title}</p>
+                <div className="animate-fade-in flex flex-col h-full">
+                  {/* Form Header Inspired by ProgramRegistration.tsx */}
+                  <div className="bg-yawai-blue p-8 sm:p-10 text-center text-white relative shrink-0">
+                     <button 
+                        onClick={() => setIsEnrolling(false)} 
+                        className="absolute top-6 left-6 text-slate-400 hover:text-white transition-colors flex items-center gap-2 font-bold text-sm"
+                     >
+                        <ArrowLeft size={18} /> Back
+                     </button>
+                     <div className="absolute top-0 left-0 w-full h-full opacity-5 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
+                     <Users size={40} className="mx-auto mb-4 text-yawai-gold" />
+                     <h2 className="text-2xl sm:text-3xl font-black mb-1">Registration Portal</h2>
+                     <p className="text-slate-400 text-sm font-medium">Securing your spot for {selectedProgram.title}</p>
                   </div>
-
-                  <form onSubmit={handleEnrollSubmit} className="space-y-5">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</label>
-                      <input 
-                        required
-                        type="text" 
-                        placeholder="e.g. John Doe"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all"
-                        value={formData.fullName}
-                        onChange={e => setFormData({...formData, fullName: e.target.value})}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  
+                  <form onSubmit={handleEnrollSubmit} className="p-8 sm:p-10 space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</label>
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Full Name</label>
+                        <input 
+                          required
+                          type="text" 
+                          placeholder="e.g. John Doe"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all font-medium"
+                          value={formData.fullName}
+                          onChange={e => setFormData({...formData, fullName: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Email Address</label>
                         <input 
                           required
                           type="email" 
                           placeholder="johndoe@email.com"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all font-medium"
                           value={formData.email}
                           onChange={e => setFormData({...formData, email: e.target.value})}
                         />
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone Number</label>
-                        <input 
-                          required
-                          type="tel" 
-                          placeholder="+234..."
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all"
-                          value={formData.phone}
-                          onChange={e => setFormData({...formData, phone: e.target.value})}
-                        />
-                      </div>
                     </div>
+
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Why do you want to join?</label>
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Phone Number</label>
+                      <input 
+                        required
+                        type="tel" 
+                        placeholder="+234..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all font-medium"
+                        value={formData.phone}
+                        onChange={e => setFormData({...formData, phone: e.target.value})}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Why do you want to join this program?</label>
                       <textarea 
                         required
                         rows={3}
-                        placeholder="Tell us about your goals..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all resize-none"
+                        placeholder="Tell us a bit about your goals and expectations..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all resize-none font-medium"
                         value={formData.motivation}
                         onChange={e => setFormData({...formData, motivation: e.target.value})}
                       />
                     </div>
                     
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-[10px] text-slate-500 flex items-start gap-3">
+                      <div className="w-5 h-5 bg-yawai-gold/10 rounded flex items-center justify-center text-yawai-gold shrink-0 mt-0.5">
+                        <Star size={12} />
+                      </div>
+                      <p className="font-bold">By registering, you commit to being available for the full program duration. Official verification will follow your submission.</p>
+                    </div>
+
                     <button 
                       type="submit"
                       disabled={enrollLoading}
-                      className="w-full bg-yawai-blue text-white py-5 rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95"
+                      className="w-full bg-yawai-blue text-white py-5 rounded-[1.5rem] font-black text-lg hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95"
                     >
-                      {enrollLoading ? <Loader2 size={24} className="animate-spin" /> : (
-                        <>Complete Enrollment <Send size={20} className="text-yawai-gold" /></>
+                      {enrollLoading ? (
+                        <Loader2 size={24} className="animate-spin" />
+                      ) : (
+                        <>Complete Registration <Send size={20} className="text-yawai-gold" /></>
                       )}
                     </button>
                   </form>
@@ -308,7 +329,7 @@ const Programs: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
                             <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                              <Users size={18} />
+                              <UsersIcon size={18} />
                             </div>
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Mentorship</span>
                         </div>
@@ -318,7 +339,7 @@ const Programs: React.FC = () => {
                   <div className="mt-10 flex flex-col sm:flex-row gap-4">
                     <button 
                       onClick={() => setIsEnrolling(true)}
-                      className="flex-1 bg-yawai-blue text-white py-5 rounded-[1.5rem] font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 active:scale-95"
+                      className="flex-1 bg-yawai-blue text-white py-5 rounded-[1.5rem] font-black text-lg hover:bg-slate-800 transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 active:scale-95"
                     >
                         Enroll in Track <ArrowRight size={20} className="text-yawai-gold" />
                     </button>
@@ -336,7 +357,7 @@ const Programs: React.FC = () => {
   );
 };
 
-const Users = ({size, className}:{size:number, className?:string}) => (
+const UsersIcon = ({size, className}:{size:number, className?:string}) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 );
 
