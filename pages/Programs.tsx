@@ -170,21 +170,20 @@ const Programs: React.FC = () => {
         </div>
       )}
 
-      {/* DETAILED VIEW MODAL / SHEET - Optimized for Bottom Navigation Bar */}
+      {/* DETAILED VIEW MODAL / SHEET - Positioned ABOVE footer nav */}
       {selectedProgram && (
-        <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 animate-fade-in">
-          {/* Backdrop remains full-screen */}
+        <div className="fixed inset-x-0 top-0 bottom-20 z-[150] flex items-end sm:items-center justify-center animate-fade-in overflow-hidden">
+          {/* Backdrop only covers the area ABOVE the nav bar */}
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={closeDetail} />
           
-          {/* On mobile, card is bottom-20 to sit exactly above the Nav Bar (h-20) */}
-          <div className="relative bg-white w-full max-w-2xl max-h-[75vh] sm:max-h-[90vh] sm:rounded-[3rem] rounded-t-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up mb-20 sm:mb-0 sm:mx-4">
+          <div className="relative bg-white w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] sm:rounded-[3rem] rounded-t-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up sm:mx-4">
             
             {/* Mobile Grabber Handle */}
             <div className="sm:hidden w-12 h-1 bg-slate-200 rounded-full mx-auto my-3 absolute top-0 left-1/2 -translate-x-1/2 z-30" />
 
             {/* Modal Header/Image */}
             {!isEnrolling && (
-              <div className="relative h-40 sm:h-64 w-full shrink-0">
+              <div className="relative h-44 sm:h-64 w-full shrink-0">
                 <img src={selectedProgram.image} className="w-full h-full object-cover" alt="" />
                 <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
                 <button 
@@ -201,8 +200,8 @@ const Programs: React.FC = () => {
               </div>
             )}
 
-            {/* Modal Content - pb-10 added for safe scrolling clearance */}
-            <div className={`flex-1 overflow-y-auto no-scrollbar ${isEnrolling ? 'p-0' : 'p-6 sm:p-10 pt-4 pb-10'}`}>
+            {/* Modal Content Scroll Area */}
+            <div className={`flex-1 overflow-y-auto no-scrollbar ${isEnrolling ? 'p-0' : 'p-6 sm:p-10 pt-4 pb-4'}`}>
               {enrollSuccess ? (
                 <div className="flex flex-col items-center justify-center h-full text-center py-10 px-6 animate-fade-in">
                   <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6 animate-bounce">
@@ -220,7 +219,7 @@ const Programs: React.FC = () => {
                   </button>
                 </div>
               ) : isEnrolling ? (
-                <div className="animate-fade-in flex flex-col h-full pb-10">
+                <div className="animate-fade-in flex flex-col h-full">
                   {/* Form Header */}
                   <div className="bg-yawai-blue p-6 sm:p-10 text-center text-white relative shrink-0">
                      <button 
@@ -234,47 +233,47 @@ const Programs: React.FC = () => {
                      <p className="text-slate-400 text-[10px] sm:text-sm font-medium">{selectedProgram.title}</p>
                   </div>
                   
-                  <form onSubmit={handleEnrollSubmit} className="p-6 sm:p-10 space-y-5">
+                  <form onSubmit={handleEnrollSubmit} className="p-6 sm:p-10 space-y-5 pb-12">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Full Name</label>
+                      <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Full Name</label>
                       <input 
                         required
                         type="text" 
                         placeholder="John Doe"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
                         value={formData.fullName}
                         onChange={e => setFormData({...formData, fullName: e.target.value})}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email Address</label>
+                      <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Email Address</label>
                       <input 
                         required
                         type="email" 
                         placeholder="johndoe@email.com"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
                         value={formData.email}
                         onChange={e => setFormData({...formData, email: e.target.value})}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Phone Number</label>
+                      <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Phone Number</label>
                       <input 
                         required
                         type="tel" 
                         placeholder="+234..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all font-medium text-sm"
                         value={formData.phone}
                         onChange={e => setFormData({...formData, phone: e.target.value})}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Motivation</label>
+                      <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Motivation</label>
                       <textarea 
                         required
                         rows={3}
                         placeholder="Why do you want to join?"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:border-yawai-gold outline-none transition-all resize-none font-medium text-sm"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all resize-none font-medium text-sm"
                         value={formData.motivation}
                         onChange={e => setFormData({...formData, motivation: e.target.value})}
                       />
@@ -283,7 +282,7 @@ const Programs: React.FC = () => {
                     <button 
                       type="submit"
                       disabled={enrollLoading}
-                      className="w-full bg-yawai-blue text-white py-4 rounded-[1.5rem] font-black text-base hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95"
+                      className="w-full bg-yawai-blue text-white py-5 rounded-[1.5rem] font-black text-lg hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95"
                     >
                       {enrollLoading ? <Loader2 size={24} className="animate-spin" /> : <>Enroll Now <Send size={20} className="text-yawai-gold" /></>}
                     </button>
@@ -301,7 +300,7 @@ const Programs: React.FC = () => {
                       </div>
                   </div>
 
-                  <div className="space-y-5">
+                  <div className="space-y-6">
                       <div>
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Program Details</h4>
                         <p className="text-slate-600 text-sm leading-relaxed font-medium">
@@ -310,32 +309,49 @@ const Programs: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-50">
-                        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl">
-                            <CheckCircle2 size={16} className="text-green-600" />
-                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Certification</span>
+                        <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+                            <CheckCircle2 size={18} className="text-green-600" />
+                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Certification</span>
                         </div>
-                        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl">
-                            <UsersIcon size={16} className="text-blue-600" />
-                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Mentorship</span>
+                        <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+                            <UsersIcon size={18} className="text-blue-600" />
+                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Mentorship</span>
                         </div>
                       </div>
-                  </div>
-
-                  {/* Enrollment Button - Fully visible above bottom-20 margin */}
-                  <div className="mt-8 flex gap-3">
-                    <button 
-                      onClick={() => setIsEnrolling(true)}
-                      className="flex-1 bg-yawai-blue text-white py-4 rounded-[1.5rem] font-black text-base hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95"
-                    >
-                        Enroll in Track <ArrowRight size={18} className="text-yawai-gold" />
-                    </button>
-                    <button className="p-4 bg-white border border-slate-200 text-slate-400 rounded-[1.5rem] hover:text-yawai-blue transition-colors shadow-sm hidden sm:block">
-                        <Share2 size={20} />
-                    </button>
+                      
+                      {/* Extra context to ensure scrolling is possible if needed */}
+                      <div className="pb-24">
+                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Key Learning Outcomes</h4>
+                         <ul className="space-y-2">
+                           <li className="flex items-start gap-2 text-xs font-bold text-slate-500">
+                             <div className="w-1.5 h-1.5 bg-yawai-gold rounded-full mt-1.5 shrink-0" />
+                             Practical Industry projects
+                           </li>
+                           <li className="flex items-start gap-2 text-xs font-bold text-slate-500">
+                             <div className="w-1.5 h-1.5 bg-yawai-gold rounded-full mt-1.5 shrink-0" />
+                             Live interaction with experts
+                           </li>
+                         </ul>
+                      </div>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Sticky Action Footer - Ensures "Enroll" button is always accessible */}
+            {!isEnrolling && !enrollSuccess && (
+              <div className="sticky bottom-0 bg-white border-t border-slate-100 p-6 flex gap-3 shadow-[0_-10px_40px_-20px_rgba(0,0,0,0.1)] shrink-0 z-40">
+                <button 
+                  onClick={() => setIsEnrolling(true)}
+                  className="flex-1 bg-yawai-blue text-white py-4.5 rounded-[1.5rem] font-black text-base hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95"
+                >
+                  Enroll in Track <ArrowRight size={18} className="text-yawai-gold" />
+                </button>
+                <button className="p-4 bg-slate-50 border border-slate-200 text-slate-400 rounded-[1.5rem] hover:text-yawai-blue transition-colors shadow-sm hidden sm:block">
+                  <Share2 size={20} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
