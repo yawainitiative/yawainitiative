@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, ExternalLink, Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Image as ImageIcon, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { SocialPost } from '../../types';
 import { socialFeedService } from '../../services/socialFeedService';
 
@@ -38,14 +38,14 @@ const AdminSocial: React.FC = () => {
         
         const newPostData = {
           platform: platform as any,
-          thumbnail: image?.url || logo?.url || 'https://via.placeholder.com/400?text=No+Preview',
+          thumbnail: image?.url || logo?.url || 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=800',
           caption: description || title || `New post from ${platform}`,
           redirectUrl: url,
           timestamp: 'Just now',
           likes: 0
         };
 
-        // 2. Persist to Supabase so it shows up in the user app
+        // 2. Persist to Supabase
         const savedPost = await socialFeedService.addPost(newPostData);
         setPosts([savedPost, ...posts]);
         setUrl('');
@@ -54,7 +54,11 @@ const AdminSocial: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Failed to fetch content. Ensure the URL is public and valid.");
+      if (err.message?.includes('row-level security')) {
+        setError("Database Permission Error: Please run the RLS fix script in your Supabase SQL Editor.");
+      } else {
+        setError(err.message || "Failed to fetch content. Ensure the URL is public and valid.");
+      }
     } finally {
       setLoading(false);
     }
@@ -65,8 +69,12 @@ const AdminSocial: React.FC = () => {
       try {
         await socialFeedService.deletePost(id);
         setPosts(posts.filter(p => p.id !== id));
-      } catch (err) {
-        alert("Failed to delete post.");
+      } catch (err: any) {
+        if (err.message?.includes('row-level security')) {
+          alert("Permission denied. Update your Supabase RLS policies to allow DELETE.");
+        } else {
+          alert("Failed to delete post.");
+        }
       }
     }
   };
@@ -76,7 +84,7 @@ const AdminSocial: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Social Media Manager</h2>
-          <p className="text-slate-500">Add URLs to populate the live feed on the user app.</p>
+          <p className="text-slate-500">Populate the live feed on the user app using URLs.</p>
         </div>
         <button 
           onClick={loadPosts} 
@@ -120,12 +128,17 @@ const AdminSocial: React.FC = () => {
                  disabled={loading || !url}
                  className="w-full h-full bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                >
-                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
+                 {loading ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
                  <span>{loading ? 'Processing' : 'Add to Feed'}</span>
                </button>
             </div>
          </div>
-         {error && <p className="mt-3 text-red-500 text-sm font-medium flex items-center gap-2"><ImageIcon size={14} /> {error}</p>}
+         {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-2 text-red-600 text-sm font-medium">
+              <AlertTriangle size={16} />
+              {error}
+            </div>
+         )}
       </div>
 
       {fetchingPosts ? (
@@ -163,7 +176,7 @@ const AdminSocial: React.FC = () => {
             <div className="col-span-full py-24 text-center text-slate-400 bg-white rounded-xl border-2 border-dashed border-slate-200">
                <ImageIcon size={48} className="mx-auto mb-3 opacity-20" />
                <p className="font-bold text-slate-600">No active social feed</p>
-               <p className="text-sm">Fetched posts will appear here and on the user dashboard.</p>
+               <p className="text-sm">Posts added here will appear on the user dashboard.</p>
             </div>
           )}
         </div>

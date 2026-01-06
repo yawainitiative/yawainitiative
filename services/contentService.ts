@@ -3,6 +3,27 @@ import { supabase } from './supabase';
 import { Program, Event, Opportunity } from '../types';
 
 export const contentService = {
+  // Storage
+  async uploadImage(file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('content')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage
+      .from('content')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  },
+
   // Programs
   async fetchPrograms(): Promise<Program[]> {
     try {

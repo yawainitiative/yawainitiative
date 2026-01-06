@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, Calendar, Briefcase, BookOpen, Filter, X, Loader2, Image as ImageIcon, Save, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Edit3, Trash2, Calendar, Briefcase, BookOpen, Filter, X, Loader2, Image as ImageIcon, Save, RefreshCw, AlertCircle, Upload } from 'lucide-react';
 import { contentService } from '../../services/contentService';
 
 const AdminContent: React.FC = () => {
@@ -9,6 +9,8 @@ const AdminContent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
   const [formData, setFormData] = useState<any>({
@@ -16,7 +18,7 @@ const AdminContent: React.FC = () => {
     category: 'Digital Skills',
     type: 'Job',
     description: '',
-    duration: '',
+    duration: '3 Months',
     date: '',
     location: '',
     organization: '',
@@ -24,6 +26,8 @@ const AdminContent: React.FC = () => {
     link: '',
     image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800'
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
 
   const loadContent = async () => {
     setLoading(true);
@@ -44,13 +48,29 @@ const AdminContent: React.FC = () => {
     loadContent();
   }, [activeTab]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure? This will remove the item from the user app immediately.")) {
       try {
         await contentService.deleteItem(activeTab, id);
         setItems(items.filter(item => item.id !== id));
-      } catch (err) {
-        alert("Failed to delete item.");
+      } catch (err: any) {
+        if (err.message?.includes('row-level security')) {
+          alert("Permission denied. Update your Supabase RLS policies to allow DELETE.");
+        } else {
+          alert("Failed to delete item.");
+        }
       }
     }
   };
@@ -58,14 +78,28 @@ const AdminContent: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    setSaveError(null);
+    
     try {
+      let imageUrl = formData.image;
+
+      // 1. Upload file if selected
+      if (selectedFile) {
+        try {
+          imageUrl = await contentService.uploadImage(selectedFile);
+        } catch (uploadErr: any) {
+          throw new Error(`Image upload failed: ${uploadErr.message}. Make sure you created a public 'content' bucket in Supabase Storage.`);
+        }
+      }
+
+      // 2. Save Data
       if (activeTab === 'programs') {
         await contentService.createProgram({
           title: formData.title,
           category: formData.category,
           description: formData.description,
           duration: formData.duration,
-          image: formData.image
+          image: imageUrl
         });
       } else if (activeTab === 'events') {
         await contentService.createEvent({
@@ -73,7 +107,7 @@ const AdminContent: React.FC = () => {
           date: formData.date,
           location: formData.location,
           description: formData.description,
-          image: formData.image
+          image: imageUrl
         });
       } else {
         await contentService.createOpportunity({
@@ -84,16 +118,25 @@ const AdminContent: React.FC = () => {
           link: formData.link
         });
       }
+
       setIsModalOpen(false);
       loadContent();
+      
+      // Reset form
       setFormData({
-        title: '', category: 'Digital Skills', type: 'Job', description: '', duration: '',
+        title: '', category: 'Digital Skills', type: 'Job', description: '', duration: '3 Months',
         date: '', location: '', organization: '', deadline: '', link: '',
         image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800'
       });
-    } catch (err) {
-      alert("Error saving content. Check if your Supabase tables are set up correctly.");
+      setSelectedFile(null);
+      setUploadPreview(null);
+    } catch (err: any) {
       console.error(err);
+      if (err.message?.includes('row-level security')) {
+        setSaveError("Database Permission Error: Please run the RLS fix script in your Supabase SQL Editor.");
+      } else {
+        setSaveError(err.message || 'Check database connection');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -120,7 +163,12 @@ const AdminContent: React.FC = () => {
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setSaveError(null);
+              setSelectedFile(null);
+              setUploadPreview(null);
+              setIsModalOpen(true);
+            }}
             className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg active:scale-95"
           >
             <Plus size={18} />
@@ -212,6 +260,13 @@ const AdminContent: React.FC = () => {
              </div>
              
              <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto no-scrollbar">
+                {saveError && (
+                  <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 text-red-600 text-sm font-medium">
+                    <AlertCircle size={18} className="mt-0.5 shrink-0" />
+                    <p>{saveError}</p>
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Title</label>
                   <input 
@@ -288,21 +343,74 @@ const AdminContent: React.FC = () => {
                 )}
 
                 {(activeTab === 'programs' || activeTab === 'events') && (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Description</label>
-                      <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50 resize-none" placeholder="Provide full details about this content..." />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Image URL</label>
-                      <div className="flex gap-4">
-                        <input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} type="text" className="flex-1 border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50" placeholder="Paste image link..." />
-                        <div className="w-16 h-16 bg-slate-100 rounded-2xl overflow-hidden shrink-0 border border-slate-200 shadow-sm">
-                          <img src={formData.image} className="w-full h-full object-cover" alt="Preview" onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/150')} />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Description</label>
+                    <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50 resize-none" placeholder="Provide full details about this content..." />
+                  </div>
+                )}
+
+                {(activeTab === 'programs' || activeTab === 'events') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Display Image</label>
+                    
+                    <div className="flex flex-col gap-4">
+                      {/* Upload Box */}
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`
+                          group border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all
+                          ${uploadPreview ? 'border-green-400 bg-green-50/30' : 'border-slate-200 hover:border-red-400 bg-slate-50/50'}
+                        `}
+                      >
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={handleFileChange} 
+                          className="hidden" 
+                          accept="image/*" 
+                        />
+                        
+                        {uploadPreview ? (
+                          <div className="relative w-full h-40 rounded-2xl overflow-hidden shadow-md">
+                            <img src={uploadPreview} className="w-full h-full object-cover" alt="Preview" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <p className="text-white text-xs font-bold">Click to change image</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-red-500 transition-colors">
+                              <Upload size={24} />
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm font-bold text-slate-700">Upload from computer</p>
+                              <p className="text-xs text-slate-400">JPG, PNG or WEBP (Max 2MB)</p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="relative py-2">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-slate-200"></div>
+                        </div>
+                        <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest text-slate-400">
+                          <span className="bg-white px-2">Or Use URL</span>
                         </div>
                       </div>
+
+                      <input 
+                        value={formData.image} 
+                        onChange={e => {
+                          setFormData({...formData, image: e.target.value});
+                          if (!selectedFile) setUploadPreview(e.target.value);
+                        }} 
+                        type="text" 
+                        className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50 text-sm" 
+                        placeholder="Paste image link here..." 
+                      />
                     </div>
-                  </>
+                  </div>
                 )}
 
                 <button 
@@ -310,8 +418,17 @@ const AdminContent: React.FC = () => {
                   disabled={isSaving}
                   className="w-full bg-slate-900 text-white font-bold py-5 rounded-[1.5rem] hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95"
                 >
-                  {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
-                  <span className="text-lg">Publish to Mobile App</span>
+                  {isSaving ? (
+                    <>
+                      <Loader2 size={24} className="animate-spin" />
+                      <span>{selectedFile ? 'Uploading & Publishing...' : 'Publishing...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={24} />
+                      <span className="text-lg">Publish to Mobile App</span>
+                    </>
+                  )}
                 </button>
              </form>
           </div>

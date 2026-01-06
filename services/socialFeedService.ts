@@ -10,7 +10,10 @@ export const socialFeedService = {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42P01') return []; // Table missing, return empty
+        throw error;
+      }
       
       return (data || []).map(post => ({
         id: post.id,
