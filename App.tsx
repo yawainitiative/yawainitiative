@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
 import { 
   Home, BookOpen, Calendar, Briefcase, Heart, User, LogOut, ShieldCheck, Loader2
 } from 'lucide-react';
@@ -29,34 +29,28 @@ import AdminVolunteers from './pages/admin/AdminVolunteers';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminLayout from './layouts/AdminLayout';
 
-// ScrollToTop Component to ensure navigation feels like a new page load
 const ScrollToTop = () => {
   const { pathname } = useLocation();
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-
   return null;
 };
 
-// Helper to determine if profile is fully set up
 const isProfileComplete = (user: UserType) => {
-  // A profile is complete if they have a real name (not default 'User')
-  // AND they have selected at least one interest (ensures they went through onboarding)
   return user.name && user.name !== 'User' && user.interests && user.interests.length > 0;
 };
 
-// Public Layout Component
 const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null, onLogout: () => void }> = ({ children, user, onLogout }) => {
   const { logoUrl } = useLogo();
-  
-  // Define routes that should not have the layout/sidebar
   const { pathname } = useLocation();
-  const isNoLayoutPage = ['/', '/login', '/signup', '/skill-acquisition', '/complete-profile'].includes(pathname);
   
-  // If user not logged in, OR user is on a landing-style page, return children without layout
-  if (!user || isNoLayoutPage || !isProfileComplete(user)) return <>{children}</>;
+  // FIX: Dashboard (/) should NOT hide the layout when a user is logged in
+  const isNoLayoutPage = (!user && pathname === '/') || ['/login', '/signup', '/skill-acquisition', '/complete-profile'].includes(pathname);
+  
+  if (!user || isNoLayoutPage || (user && !isProfileComplete(user) && pathname !== '/complete-profile' && pathname !== '/')) {
+    return <>{children}</>;
+  }
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
@@ -68,27 +62,30 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans overflow-x-hidden">
       <ScrollToTop />
       
       {/* Mobile Top Bar */}
-      <header className="md:hidden bg-white/90 backdrop-blur-md text-yawai-blue p-4 flex justify-center items-center sticky top-0 z-30 border-b border-slate-100 shadow-sm">
+      <header className="md:hidden bg-white/95 backdrop-blur-md text-yawai-blue p-4 flex justify-between items-center sticky top-0 z-[60] border-b border-slate-100 shadow-sm h-16">
         <div className="flex items-center gap-2">
            {logoUrl ? (
-             <img src={logoUrl} alt="YAWAI Logo" className="w-8 h-8 object-cover rounded-full" />
+             <img src={logoUrl} alt="Logo" className="w-8 h-8 object-cover rounded-full" />
            ) : (
              <div className="w-8 h-8 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-lg flex items-center justify-center text-yawai-blue font-bold text-lg shadow-sm">Y</div>
            )}
            <h1 className="text-lg font-extrabold tracking-tight">YAWAI</h1>
         </div>
+        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
+           {user.role}
+        </div>
       </header>
 
       {/* Sidebar (Desktop) */}
-      <aside className="hidden md:flex sticky top-0 left-0 h-screen w-72 bg-yawai-blue text-white flex-col z-40 shadow-2xl">
+      <aside className="hidden md:flex sticky top-0 left-0 h-screen w-72 bg-yawai-blue text-white flex-col z-40 shadow-2xl shrink-0">
         <div className="p-8 pb-4">
           <div className="flex items-center gap-3 mb-8">
             {logoUrl ? (
-              <img src={logoUrl} alt="YAWAI Logo" className="w-10 h-10 object-cover rounded-full bg-white/10" />
+              <img src={logoUrl} alt="Logo" className="w-10 h-10 object-cover rounded-full bg-white/10" />
             ) : (
               <div className="w-10 h-10 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-xl flex items-center justify-center text-yawai-blue font-bold text-xl shadow-glow">Y</div>
             )}
@@ -146,28 +143,28 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-x-hidden md:h-screen md:overflow-y-auto bg-slate-50 relative pb-24 md:pb-0">
+      {/* Main Content Area */}
+      <main className="flex-1 min-h-0 relative bg-slate-50 overflow-y-auto pb-28 md:pb-0">
         <div className="max-w-6xl mx-auto p-4 md:p-10">
           {children}
         </div>
       </main>
 
-      {/* Mobile Bottom Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-50 px-2 pb-safe">
-         <div className="flex justify-around items-center">
+      {/* Mobile Bottom Bar Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.15)] z-[100] px-2 pb-safe-offset-2 h-20">
+         <div className="flex justify-around items-center h-full">
            {navItems.map((item) => (
               <NavLink key={item.path} to={item.path} className={({ isActive }) => `
-                  flex flex-col items-center justify-center w-full py-3 transition-all duration-300 relative
-                  ${isActive ? 'text-yawai-blue' : 'text-slate-400 hover:text-slate-500'}
+                  flex flex-col items-center justify-center w-full h-full transition-all duration-300 relative
+                  ${isActive ? 'text-yawai-blue' : 'text-slate-400'}
                 `}>
                 {({ isActive }) => (
                   <>
-                    <div className={`relative p-1.5 rounded-xl transition-all duration-300 ${isActive ? '-translate-y-1' : ''}`}>
+                    <div className={`relative p-2 rounded-xl transition-all duration-300 ${isActive ? '-translate-y-1' : ''}`}>
                       <item.icon size={isActive ? 24 : 22} strokeWidth={isActive ? 2.5 : 2} />
-                      {isActive && <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-yawai-gold rounded-full" />}
+                      {isActive && <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-yawai-gold rounded-full" />}
                     </div>
-                    <span className={`text-[10px] font-bold mt-0.5 transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 hidden'}`}>{item.label}</span>
+                    <span className={`text-[10px] font-bold mt-0.5 ${isActive ? 'opacity-100' : 'opacity-0 h-0 w-0 overflow-hidden'}`}>{item.label}</span>
                   </>
                 )}
               </NavLink>
@@ -244,7 +241,7 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-yawai-blue">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-yawai-blue p-6">
          <Loader2 size={48} className="animate-spin text-yawai-gold mb-4" />
          <h2 className="font-bold text-xl">Loading YAWAI...</h2>
       </div>
@@ -274,17 +271,12 @@ const App: React.FC = () => {
                     ? (isProfileComplete(user) ? <Dashboard user={user} /> : <Navigate to="/complete-profile" replace />)
                     : <LandingPage />
                 } />
-
-                {/* Specific Public Registration Page */}
                 <Route path="/skill-acquisition" element={<ProgramRegistration />} />
-
                 <Route path="/login" element={!user ? <Onboarding initialAuthMode="signin" /> : <Navigate to="/" replace />} />
                 <Route path="/signup" element={!user ? <Onboarding initialAuthMode="signup" /> : <Navigate to="/" replace />} />
-                
                 <Route path="/complete-profile" element={
                     user ? (isProfileComplete(user) ? <Navigate to="/" replace /> : <Onboarding user={user} />) : <Navigate to="/login" replace />
                 } />
-
                 <Route path="/programs" element={user ? <Programs /> : <Navigate to="/login" />} />
                 <Route path="/events" element={user ? <Events /> : <Navigate to="/login" />} />
                 <Route path="/opportunities" element={user ? <Opportunities /> : <Navigate to="/login" />} />
