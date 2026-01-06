@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle, Heart, Users, BookOpen, Shield, Globe } from 'lucide-react';
+import { ArrowRight, CheckCircle, Heart, Users, BookOpen, Shield, Globe, Rocket, Calendar } from 'lucide-react';
 import { useLogo } from '../contexts/LogoContext';
 
 const LandingPage: React.FC = () => {
@@ -78,8 +78,34 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Featured Announcement Banner */}
+      <section className="relative z-30 -mt-12 px-4 md:px-10">
+         <Link to="/skill-acquisition" className="block max-w-5xl mx-auto">
+            <div className="bg-gradient-to-r from-indigo-900 via-yawai-blue to-slate-900 rounded-3xl p-6 md:p-10 border border-white/10 shadow-2xl group transition-all hover:scale-[1.01] overflow-hidden relative">
+               <div className="absolute right-0 top-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                 <Rocket size={120} className="text-yawai-gold" />
+               </div>
+               <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                  <div className="flex-1">
+                     <div className="flex items-center gap-3 mb-4">
+                        <span className="bg-yawai-gold text-yawai-blue text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">New Program</span>
+                        <div className="flex items-center gap-1.5 text-yawai-goldLight font-bold text-xs">
+                           <Calendar size={14} /> Kicks off Jan 2026
+                        </div>
+                     </div>
+                     <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2 tracking-tight">3-Month Skill Acquisition Program</h2>
+                     <p className="text-slate-400 max-w-xl text-sm md:text-base">Master Video Editing, Graphics, Auto-Gele, and more. Registration opens January 6th. Take a step toward your future.</p>
+                  </div>
+                  <div className="bg-white text-yawai-blue px-8 py-4 rounded-2xl font-extrabold text-sm flex items-center gap-2 shadow-lg group-hover:bg-yawai-gold transition-colors">
+                     Register Now <ArrowRight size={18} />
+                  </div>
+               </div>
+            </div>
+         </Link>
+      </section>
+
       {/* Stats Section */}
-      <section className="bg-white py-12 border-b border-slate-100 relative z-20 -mt-8 mx-4 md:mx-10 rounded-2xl shadow-xl">
+      <section className="bg-white py-12 border-b border-slate-100 relative z-20 mt-12 mx-4 md:mx-10 rounded-2xl shadow-xl">
          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-slate-100">
             <div className="p-4">
                <div className="text-3xl md:text-4xl font-extrabold text-yawai-blue mb-1">5K+</div>

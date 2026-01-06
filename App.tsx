@@ -18,6 +18,7 @@ import Donate from './pages/Donate';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import LandingPage from './pages/LandingPage';
+import ProgramRegistration from './pages/ProgramRegistration';
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -50,8 +51,12 @@ const isProfileComplete = (user: UserType) => {
 const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null, onLogout: () => void }> = ({ children, user, onLogout }) => {
   const { logoUrl } = useLogo();
   
-  // If no user, or profile incomplete, just render content without sidebar (handled by LandingPage or Onboarding)
-  if (!user || !isProfileComplete(user)) return <>{children}</>;
+  // Define routes that should not have the layout/sidebar
+  const { pathname } = useLocation();
+  const isNoLayoutPage = ['/', '/login', '/signup', '/skill-acquisition', '/complete-profile'].includes(pathname);
+  
+  // If user not logged in, OR user is on a landing-style page, return children without layout
+  if (!user || isNoLayoutPage || !isProfileComplete(user)) return <>{children}</>;
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
@@ -64,7 +69,6 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans">
-      {/* ScrollToTop acts here to reset scroll on route change */}
       <ScrollToTop />
       
       {/* Mobile Top Bar */}
@@ -175,7 +179,6 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
 };
 
 const ProtectedAdminRoute = ({ user }: { user: UserType | null }) => {
-  // If not admin, redirect to the new login path /admin
   if (!user || user.role !== 'admin') {
     return <Navigate to="/admin" replace />;
   }
@@ -187,7 +190,6 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Check for Local Storage "Demo" Admin Session
     const checkLocalSession = () => {
       const isDemoAdmin = localStorage.getItem('yawai_demo_admin') === 'true';
       if (isDemoAdmin) {
@@ -196,7 +198,7 @@ const App: React.FC = () => {
           email: 'yawainitiative2022@gmail.com',
           name: 'YAWAI Admin',
           role: 'admin',
-          interests: [],
+          interests: ['Admin'],
           volunteerHours: 0
         });
         setLoading(false);
@@ -207,16 +209,13 @@ const App: React.FC = () => {
 
     if (checkLocalSession()) return;
 
-    // 2. Check Supabase Session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setUser(mapSessionToUser(session));
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // If we are locally logged in as admin, ignore supabase updates that might be null
       if (localStorage.getItem('yawai_demo_admin') === 'true') return;
-
       setUser(session ? mapSessionToUser(session) : null);
       setLoading(false);
     });
@@ -240,7 +239,7 @@ const App: React.FC = () => {
     localStorage.removeItem('yawai_demo_admin');
     await supabase.auth.signOut();
     setUser(null);
-    window.location.href = '/'; // Force reload to clear all states
+    window.location.href = '/'; 
   };
 
   if (loading) {
@@ -270,28 +269,22 @@ const App: React.FC = () => {
           <Route path="*" element={
             <PublicLayout user={user} onLogout={handleLogout}>
               <Routes>
-                {/* 
-                   ROOT LOGIC:
-                   1. If !user => Landing Page
-                   2. If user && !complete => Profile Setup (Onboarding)
-                   3. If user && complete => Dashboard
-                */}
                 <Route path="/" element={
                   user 
                     ? (isProfileComplete(user) ? <Dashboard user={user} /> : <Navigate to="/complete-profile" replace />)
                     : <LandingPage />
                 } />
 
-                {/* Auth Routes */}
+                {/* Specific Public Registration Page */}
+                <Route path="/skill-acquisition" element={<ProgramRegistration />} />
+
                 <Route path="/login" element={!user ? <Onboarding initialAuthMode="signin" /> : <Navigate to="/" replace />} />
                 <Route path="/signup" element={!user ? <Onboarding initialAuthMode="signup" /> : <Navigate to="/" replace />} />
                 
-                {/* Profile Completion Route (Protected, for logged in but incomplete users) */}
                 <Route path="/complete-profile" element={
                     user ? (isProfileComplete(user) ? <Navigate to="/" replace /> : <Onboarding user={user} />) : <Navigate to="/login" replace />
                 } />
 
-                {/* App Pages (Protected) */}
                 <Route path="/programs" element={user ? <Programs /> : <Navigate to="/login" />} />
                 <Route path="/events" element={user ? <Events /> : <Navigate to="/login" />} />
                 <Route path="/opportunities" element={user ? <Opportunities /> : <Navigate to="/login" />} />
