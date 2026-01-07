@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, SocialPost, Event, Program } from '../types';
 import { socialFeedService } from '../services/socialFeedService';
-import { contentService } from '../services/contentService';
+import { contentService, GalleryImage } from '../services/contentService';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
@@ -17,7 +17,9 @@ import {
   User as UserIcon,
   ChevronRight,
   Clock,
-  Award
+  Award,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Instagram, Facebook, Twitter, Linkedin, Youtube, Video } from 'lucide-react';
 
@@ -42,6 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [socialPosts, setSocialPosts] = useState<SocialPost[]>([]);
   const [featuredEvent, setFeaturedEvent] = useState<Event | null>(null);
   const [topPrograms, setTopPrograms] = useState<Program[]>([]);
+  const [galleryItems, setGalleryItems] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [showGreeting, setShowGreeting] = useState(false);
 
@@ -49,14 +52,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     setShowGreeting(true);
     const loadData = async () => {
       try {
-        const [posts, events, programs] = await Promise.all([
+        const [posts, events, programs, gallery] = await Promise.all([
           socialFeedService.fetchAllPosts(),
           contentService.fetchEvents(),
-          contentService.fetchPrograms()
+          contentService.fetchPrograms(),
+          contentService.fetchGallery()
         ]);
         setSocialPosts(posts);
         setFeaturedEvent(events[0] || null);
         setTopPrograms(programs.slice(0, 3));
+        setGalleryItems(gallery.slice(0, 5)); // Get latest 5 images
       } catch (err) {
         console.error("Failed to load dashboard data", err);
       } finally {
@@ -78,10 +83,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   return (
     <div className="space-y-10 pb-20 md:pb-0">
       
-      {/* Sleek Welcome Impact Card - Reduced Mobile Height */}
+      {/* Sleek Welcome Impact Card */}
       <section className={`transition-all duration-700 transform ${showGreeting ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-yawai-blue via-slate-900 to-yawai-blue p-6 md:p-10 shadow-2xl border border-white/5">
-           {/* Background Decorative Icon */}
            <div className="absolute -right-10 -bottom-10 opacity-5 transform rotate-12 pointer-events-none">
               <Sparkles size={240} className="text-white" />
            </div>
@@ -113,7 +117,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                  </div>
               </div>
 
-              {/* Quick Progress Stats Panel - Tightened Padding */}
               <div className="grid grid-cols-2 gap-3 w-full md:w-auto shrink-0">
                  <div className="bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-5 rounded-3xl flex flex-col items-center justify-center text-center">
                     <Clock size={18} className="text-yawai-gold mb-1 md:mb-2" />
@@ -151,6 +154,31 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </Link>
           </div>
         </div>
+      )}
+
+      {/* Impact Gallery Preview Section - NEW */}
+      {galleryItems.length > 0 && (
+        <section className={`transition-all duration-700 delay-150 transform ${showGreeting ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+          <div className="flex items-center justify-between mb-6 px-2">
+            <div>
+              <h3 className="text-2xl font-black text-slate-800">Impact in Frames</h3>
+              <p className="text-sm font-medium text-slate-500">Memorial moments from our community.</p>
+            </div>
+            <Link to="/gallery" className="flex items-center gap-2 text-xs font-black text-yawai-blue uppercase tracking-widest bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
+              See All <ChevronRight size={14} />
+            </Link>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar snap-x">
+            {galleryItems.map((img) => (
+              <Link key={img.id} to="/gallery" className="min-w-[200px] md:min-w-[260px] h-[180px] md:h-[220px] snap-center relative rounded-3xl overflow-hidden group shadow-md transition-transform duration-300 hover:scale-[1.02]">
+                <img src={img.url} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                  {img.caption && <p className="text-white text-[10px] font-bold line-clamp-2 leading-tight">{img.caption}</p>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Latest Social Updates Feed */}
