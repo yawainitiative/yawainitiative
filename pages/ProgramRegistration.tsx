@@ -122,16 +122,12 @@ const ProgramRegistration: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 pb-0 font-sans overflow-x-hidden">
       <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 md:px-10 h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
+        <Link to="/" className="flex items-center">
           {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-full object-cover shadow-sm" />
+            <img src={logoUrl} alt="Logo" className="w-12 h-12 rounded-full object-contain shadow-sm" />
           ) : (
             <div className="w-10 h-10 bg-yawai-gold rounded-xl flex items-center justify-center text-yawai-blue font-bold">Y</div>
           )}
-          <div className="flex flex-col">
-            <span className="font-extrabold text-xl text-yawai-blue tracking-tight leading-none">YAWAI</span>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Everyone Matters</span>
-          </div>
         </Link>
         <Link to="/" className="text-[10px] font-black text-slate-500 hover:text-yawai-blue transition-colors uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-full border border-slate-100">Back to Site</Link>
       </nav>
@@ -369,7 +365,7 @@ const ProgramRegistration: React.FC = () => {
                <div className="flex flex-col items-center md:items-start text-center md:text-left">
                   <div className="flex items-center gap-3 mb-4">
                      {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-full object-cover shadow-sm" />
+                        <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-full object-contain shadow-sm" />
                      ) : (
                         <div className="w-10 h-10 bg-yawai-blue rounded-xl flex items-center justify-center text-yawai-gold font-black">Y</div>
                      )}

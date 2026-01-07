@@ -12,17 +12,13 @@ const LandingPage: React.FC = () => {
       {/* Navbar */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-2.5">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center group">
               {logoUrl ? (
-                <img src={logoUrl} alt="YAWAI" className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-100" />
+                <img src={logoUrl} alt="YAWAI" className="w-12 h-12 rounded-full object-contain shadow-sm border border-slate-100 transition-transform group-hover:scale-105" />
               ) : (
                 <div className="w-10 h-10 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-xl flex items-center justify-center text-yawai-blue font-bold text-xl shadow-glow">Y</div>
               )}
-              <div className="flex flex-col">
-                <span className="text-xl font-extrabold text-yawai-blue tracking-tight leading-none">YAWAI</span>
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mt-0.5">Everyone Matters</span>
-              </div>
             </Link>
           </div>
 
@@ -163,7 +159,7 @@ const LandingPage: React.FC = () => {
             <div className="max-w-sm">
               <div className="flex items-center gap-3 mb-6">
                 {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" className="w-12 h-12 rounded-full object-cover shadow-sm" />
+                  <img src={logoUrl} alt="Logo" className="w-12 h-12 rounded-full object-contain shadow-sm" />
                 ) : (
                   <div className="w-12 h-12 bg-yawai-blue rounded-2xl flex items-center justify-center text-yawai-gold font-black text-xl">Y</div>
                 )}

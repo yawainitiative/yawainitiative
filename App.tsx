@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
+// Added Link to the imports from react-router-dom
+import { BrowserRouter, Routes, Route, NavLink, Link, useLocation, Navigate } from 'react-router-dom';
 import { 
   Home, BookOpen, Calendar, Briefcase, Heart, User, LogOut, ShieldCheck, Loader2, Image
 } from 'lucide-react';
@@ -67,18 +68,16 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans overflow-x-hidden">
       <ScrollToTop />
       
-      {/* Mobile Top Bar */}
+      {/* Mobile Top Bar - Refined for brand icon prominence */}
       <header className="md:hidden bg-white/95 backdrop-blur-md text-yawai-blue p-4 flex justify-between items-center sticky top-0 z-[60] border-b border-slate-100 shadow-sm h-16">
-        <div className="flex items-center gap-2">
-           {logoUrl ? (
-             <img src={logoUrl} alt="Logo" className="w-8 h-8 object-cover rounded-full border border-slate-100" />
-           ) : (
-             <div className="w-8 h-8 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-lg flex items-center justify-center text-yawai-blue font-bold text-lg shadow-sm">Y</div>
-           )}
-           <div className="flex flex-col">
-             <h1 className="text-lg font-extrabold tracking-tight leading-none">YAWAI</h1>
-             <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Everyone Matters</span>
-           </div>
+        <div className="flex items-center">
+           <Link to="/" className="flex items-center">
+             {logoUrl ? (
+               <img src={logoUrl} alt="YAWAI" className="w-10 h-10 object-contain rounded-full border border-slate-100 shadow-sm" />
+             ) : (
+               <div className="w-10 h-10 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-lg flex items-center justify-center text-yawai-blue font-bold text-xl shadow-sm">Y</div>
+             )}
+           </Link>
         </div>
         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
            {user.role}
@@ -88,18 +87,17 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
       {/* Sidebar (Desktop) */}
       <aside className="hidden md:flex sticky top-0 left-0 h-screen w-72 bg-yawai-blue text-white flex-col z-40 shadow-2xl shrink-0">
         <div className="p-8 pb-4">
-          <div className="flex items-center gap-3 mb-8">
-            {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="w-10 h-10 object-cover rounded-full bg-white/10" />
-            ) : (
-              <div className="w-10 h-10 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-xl flex items-center justify-center text-yawai-blue font-bold text-xl shadow-glow">Y</div>
-            )}
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white leading-none">YAWAI</h1>
-              <p className="text-[10px] text-yawai-gold font-black tracking-widest uppercase mt-1">Everyone Matters</p>
-            </div>
+          <div className="flex items-center justify-center mb-8">
+            <Link to="/" className="flex flex-col items-center">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="w-16 h-16 object-contain rounded-full bg-white/5 p-1 mb-2 border border-white/10" />
+              ) : (
+                <div className="w-12 h-12 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-xl flex items-center justify-center text-yawai-blue font-bold text-2xl shadow-glow mb-2">Y</div>
+              )}
+              <p className="text-[10px] text-yawai-gold font-black tracking-[0.3em] uppercase">Everyone Matters</p>
+            </Link>
           </div>
-          <div className="h-px bg-gradient-to-r from-slate-700/50 via-slate-700 to-slate-700/50 mb-6" />
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-6" />
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 pb-4">
@@ -179,7 +177,19 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
     </div>
   );
 };
-// ... rest of the file stays same
+
+const mapSessionToUser = (session: any): UserType => {
+  const meta = session.user.user_metadata || {};
+  return {
+    id: session.user.id,
+    email: session.user.email || '',
+    name: meta.full_name || 'User',
+    role: meta.role || 'user',
+    interests: meta.interests || [],
+    volunteerHours: meta.volunteerHours || 0
+  };
+};
+
 const ProtectedAdminRoute = ({ user }: { user: UserType | null }) => {
   if (!user || user.role !== 'admin') {
     return <Navigate to="/admin" replace />;
@@ -224,18 +234,6 @@ const App: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const mapSessionToUser = (session: any): UserType => {
-    const meta = session.user.user_metadata || {};
-    return {
-      id: session.user.id,
-      email: session.user.email || '',
-      name: meta.full_name || 'User',
-      role: meta.role || 'user',
-      interests: meta.interests || [],
-      volunteerHours: meta.volunteerHours || 0
-    };
-  };
 
   const handleLogout = async () => {
     localStorage.removeItem('yawai_demo_admin');
