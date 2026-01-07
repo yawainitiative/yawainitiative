@@ -12,7 +12,6 @@ const AdminContent: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
   const [formData, setFormData] = useState<any>({
@@ -121,7 +120,7 @@ const AdminContent: React.FC = () => {
       setEditId(null);
       loadContent();
     } catch (err: any) {
-      setSaveError(err.message || 'Error saving data. Check your Supabase bucket permissions.');
+      setSaveError(err.message || 'Error saving data. Ensure the "content" bucket exists in Supabase Storage.');
     } finally {
       setIsSaving(false);
     }
@@ -268,7 +267,7 @@ const AdminContent: React.FC = () => {
                 {activeTab === 'programs' && (
                   <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3 text-amber-800 text-xs font-bold">
                     <Info size={18} className="shrink-0" />
-                    <p>To show a skill card (like Video Editing) on the registration page, set Category to <strong>'Skill Track'</strong>.</p>
+                    <p>To show a skill card on the registration page, set Category to <strong>'Skill Track'</strong>.</p>
                   </div>
                 )}
 
@@ -306,13 +305,9 @@ const AdminContent: React.FC = () => {
                 {(activeTab === 'programs' || activeTab === 'events') && (
                   <div className="space-y-4">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Display Image</label>
-                    <div 
-                      onClick={() => fileInputRef.current?.click()} 
-                      className={`group border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${uploadPreview ? 'border-green-400 bg-green-50/20' : 'border-slate-200 hover:border-red-400 bg-slate-50/50'}`}
-                    >
+                    <label className="group block border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all border-slate-200 hover:border-red-400 bg-slate-50/50">
                       <input 
                         type="file" 
-                        ref={fileInputRef} 
                         onChange={handleFileChange} 
                         className="hidden" 
                         accept="image/*" 
@@ -325,7 +320,7 @@ const AdminContent: React.FC = () => {
                           <p className="text-xs font-bold text-slate-500">Upload Image</p>
                         </div>
                       )}
-                    </div>
+                    </label>
                   </div>
                 )}
 
