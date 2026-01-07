@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Calendar, CheckCircle, ArrowLeft, Loader2, Send, 
-  Target, Rocket, Users, Info, Sparkles
+  Target, Rocket, Users, Info, Sparkles, AlertCircle, Database
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLogo } from '../contexts/LogoContext';
@@ -16,6 +16,7 @@ const ProgramRegistration: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [skillTracks, setSkillTracks] = useState<Program[]>([]);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -29,13 +30,27 @@ const ProgramRegistration: React.FC = () => {
   useEffect(() => {
     const fetchSkills = async () => {
       setLoading(true);
+      setErrorStatus(null);
       try {
         const allPrograms = await contentService.fetchPrograms();
-        // Filter for Skill Acquisition category specifically
-        const skills = allPrograms.filter(p => p.category === 'Skill Acquisition');
+        // Check if data exists at all
+        if (allPrograms.length === 0) {
+           setErrorStatus("NO_PROGRAMS_FOUND");
+        }
+        
+        // Filter for Skill Acquisition category (Case-insensitive check)
+        const skills = allPrograms.filter(p => 
+          p.category?.toLowerCase() === 'skill acquisition'
+        );
+        
+        if (allPrograms.length > 0 && skills.length === 0) {
+           setErrorStatus("NO_SKILLS_CATEGORY");
+        }
+
         setSkillTracks(skills);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to load skills:", err);
+        setErrorStatus("DATABASE_ERROR");
       } finally {
         setLoading(false);
       }
@@ -67,9 +82,9 @@ const ProgramRegistration: React.FC = () => {
       
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Registration failed. Please check your connection.");
+      alert(`Registration failed: ${err.message || 'Please check your connection.'}`);
     } finally {
       setSubmitting(false);
     }
@@ -122,20 +137,16 @@ const ProgramRegistration: React.FC = () => {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yawai-gold to-yellow-300">Empower Your Future.</span>
           </h1>
           <p className="text-slate-400 text-lg md:text-xl max-w-2xl mb-8 animate-slide-up font-medium leading-relaxed" style={{ animationDelay: '0.1s' }}>
-            Our 3-Month Skill Acquisition Program is now accepting registrations. Uploaded and managed directly from the YAWAI Admin Portal.
+            Our 3-Month Skill Acquisition Program is now accepting registrations. Select your preferred track below to begin.
           </p>
           <div className="flex flex-wrap justify-center md:justify-start gap-4 md:gap-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
              <div className="flex items-center gap-2 text-slate-300">
                 <CheckCircle size={18} className="text-yawai-gold" />
-                <span className="text-xs font-bold uppercase tracking-widest">Hands-on Training</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Professional Training</span>
              </div>
              <div className="flex items-center gap-2 text-slate-300">
                 <CheckCircle size={18} className="text-yawai-gold" />
-                <span className="text-xs font-bold uppercase tracking-widest">Expert Mentors</span>
-             </div>
-             <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle size={18} className="text-yawai-gold" />
-                <span className="text-xs font-bold uppercase tracking-widest">Global Certificate</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Expert Facilitators</span>
              </div>
           </div>
         </div>
@@ -147,16 +158,7 @@ const ProgramRegistration: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
             <div>
               <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">Explore the Tracks</h2>
-              <p className="text-slate-500 max-w-xl text-lg font-medium">Choose a track to begin. These are managed manually via Admin Content Manager.</p>
-            </div>
-            <div className="bg-white px-6 py-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center gap-4">
-               <div className="w-14 h-14 bg-yawai-gold/10 rounded-2xl flex items-center justify-center text-yawai-gold">
-                  <Target size={28} />
-               </div>
-               <div>
-                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Application Limit</p>
-                 <p className="text-xl font-black text-slate-900">One Track Only</p>
-               </div>
+              <p className="text-slate-500 max-w-xl text-lg font-medium">Choose a track to begin your journey.</p>
             </div>
           </div>
 
@@ -183,7 +185,6 @@ const ProgramRegistration: React.FC = () => {
                      <img src={track.image} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" alt={track.title} />
                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                      
-                     {/* Selection Feedback Overlay */}
                      {formData.selectedSkill === track.title && (
                        <div className="absolute top-4 right-4 bg-yawai-gold text-yawai-blue p-1.5 rounded-full shadow-lg border-2 border-white animate-bounce">
                          <CheckCircle size={20} />
@@ -203,9 +204,28 @@ const ProgramRegistration: React.FC = () => {
             </div>
           ) : (
             <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
-               <Sparkles size={48} className="mx-auto mb-4 text-slate-200" />
-               <p className="text-xl font-black text-slate-800">No Skill Tracks Uploaded</p>
-               <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">Go to Admin &rarr; Content Manager and add Programs with the category "Skill Acquisition" to see them here.</p>
+               {errorStatus === 'DATABASE_ERROR' ? (
+                 <>
+                   <AlertCircle size={48} className="mx-auto mb-4 text-red-500" />
+                   <p className="text-xl font-black text-slate-800">Connection Issue</p>
+                   <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">Could not reach the database. Please ensure your Supabase project is active and tables are created.</p>
+                 </>
+               ) : errorStatus === 'NO_PROGRAMS_FOUND' ? (
+                 <>
+                   <Database size={48} className="mx-auto mb-4 text-slate-300" />
+                   <p className="text-xl font-black text-slate-800">Database Empty</p>
+                   <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">No programs found. Go to the Admin Dashboard &rarr; Content Manager to add your first training track.</p>
+                 </>
+               ) : (
+                 <>
+                   <Info size={48} className="mx-auto mb-4 text-yawai-gold" />
+                   <p className="text-xl font-black text-slate-800">No Skill Tracks Found</p>
+                   <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">We found programs in your DB, but none were tagged with the <strong>'Skill Acquisition'</strong> category.</p>
+                 </>
+               )}
+               <Link to="/login" className="mt-8 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-yawai-blue bg-slate-50 px-6 py-2.5 rounded-xl border border-slate-200 hover:bg-white transition-all">
+                  Access Admin Dashboard
+               </Link>
             </div>
           )}
         </div>
@@ -223,7 +243,6 @@ const ProgramRegistration: React.FC = () => {
              </div>
              
              <form onSubmit={handleSubmit} className="p-8 md:p-14 space-y-8">
-                {/* Track Indicator if selected */}
                 {formData.selectedSkill ? (
                   <div className="bg-yawai-gold/10 border border-yawai-gold/20 p-5 rounded-2xl flex items-center justify-between">
                      <div className="flex items-center gap-4">
@@ -294,7 +313,7 @@ const ProgramRegistration: React.FC = () => {
                   <textarea 
                     required
                     rows={4}
-                    placeholder="Briefly tell us about your goals and career expectations..."
+                    placeholder="Briefly tell us about your goals and expectations..."
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all resize-none font-medium"
                     value={formData.motivation}
                     onChange={e => setFormData({...formData, motivation: e.target.value})}
