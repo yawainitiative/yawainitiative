@@ -10,7 +10,8 @@ import {
   LogOut, 
   Menu,
   ShieldAlert,
-  ClipboardList
+  ClipboardList,
+  Image
 } from 'lucide-react';
 import { User } from '../types';
 import { supabase } from '../services/supabase';
@@ -35,6 +36,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
     { icon: LayoutDashboard, label: 'Overview', path: '/admin/dashboard' },
     { icon: ClipboardList, label: 'Applications', path: '/admin/applications' },
     { icon: Share2, label: 'Social Feed', path: '/admin/social' },
+    { icon: Image, label: 'Media Gallery', path: '/admin/gallery' },
     { icon: FileText, label: 'Content Manager', path: '/admin/content' },
     { icon: Users, label: 'Volunteer Hub', path: '/admin/volunteers' },
   ];

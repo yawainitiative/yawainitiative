@@ -2,6 +2,13 @@
 import { supabase } from './supabase';
 import { Program, Event, Opportunity } from '../types';
 
+export interface GalleryImage {
+  id: string;
+  url: string;
+  caption?: string;
+  created_at: string;
+}
+
 export const contentService = {
   // Storage
   async uploadImage(file: File): Promise<string> {
@@ -24,6 +31,35 @@ export const contentService = {
     return data.publicUrl;
   },
 
+  // Gallery
+  async fetchGallery(): Promise<GalleryImage[]> {
+    try {
+      const { data, error } = await supabase
+        .from('gallery_images')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        if (error.code === '42P01') return [];
+        throw error;
+      }
+      return data || [];
+    } catch (err) {
+      console.error("Error fetching gallery:", err);
+      return [];
+    }
+  },
+
+  async addGalleryImage(url: string, caption?: string) {
+    const { data, error } = await supabase
+      .from('gallery_images')
+      .insert([{ url, caption }])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   // Programs
   async fetchPrograms(): Promise<Program[]> {
     try {
@@ -33,7 +69,7 @@ export const contentService = {
         .order('created_at', { ascending: false });
       
       if (error) {
-        if (error.code === '42P01') return []; // Table doesn't exist yet
+        if (error.code === '42P01') return [];
         throw error;
       }
       return data || [];
@@ -112,7 +148,7 @@ export const contentService = {
   },
 
   // Generic Delete
-  async deleteItem(table: 'programs' | 'events' | 'opportunities', id: string) {
+  async deleteItem(table: 'programs' | 'events' | 'opportunities' | 'gallery_images', id: string) {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;
   }

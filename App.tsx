@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
 import { 
-  Home, BookOpen, Calendar, Briefcase, Heart, User, LogOut, ShieldCheck, Loader2
+  Home, BookOpen, Calendar, Briefcase, Heart, User, LogOut, ShieldCheck, Loader2, Image
 } from 'lucide-react';
 import { User as UserType } from './types';
 import { supabase } from './services/supabase';
@@ -19,6 +19,7 @@ import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import LandingPage from './pages/LandingPage';
 import ProgramRegistration from './pages/ProgramRegistration';
+import Gallery from './pages/Gallery';
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -28,6 +29,7 @@ import AdminContent from './pages/admin/AdminContent';
 import AdminVolunteers from './pages/admin/AdminVolunteers';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminApplications from './pages/admin/AdminApplications';
+import AdminGallery from './pages/admin/AdminGallery';
 import AdminLayout from './layouts/AdminLayout';
 
 const ScrollToTop = () => {
@@ -56,7 +58,7 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
     { icon: Home, label: 'Home', path: '/' },
     { icon: BookOpen, label: 'Programs', path: '/programs' },
     { icon: Calendar, label: 'Events', path: '/events' },
-    { icon: Briefcase, label: 'Jobs', path: '/opportunities' },
+    { icon: Image, label: 'Media', path: '/gallery' },
     { icon: Heart, label: 'Donate', path: '/donate' },
     { icon: User, label: 'Profile', path: '/profile' },
   ];
@@ -112,7 +114,7 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
                   `}
                 >
                   <item.icon size={20} strokeWidth={2} />
-                  <span className="flex-1">{item.label === 'Jobs' ? 'Opportunities' : item.label}</span>
+                  <span className="flex-1">{item.label}</span>
                 </NavLink>
               </li>
             ))}
@@ -261,6 +263,7 @@ const App: React.FC = () => {
              <Route path="/admin/content" element={<AdminContent />} />
              <Route path="/admin/volunteers" element={<AdminVolunteers />} />
              <Route path="/admin/settings" element={<AdminSettings />} />
+             <Route path="/admin/gallery" element={<AdminGallery />} />
           </Route>
 
           {/* Public / User Routes */}
@@ -280,6 +283,7 @@ const App: React.FC = () => {
                 } />
                 <Route path="/programs" element={user ? <Programs /> : <Navigate to="/login" />} />
                 <Route path="/events" element={user ? <Events /> : <Navigate to="/login" />} />
+                <Route path="/gallery" element={user ? <Gallery /> : <Navigate to="/login" />} />
                 <Route path="/opportunities" element={user ? <Opportunities /> : <Navigate to="/login" />} />
                 <Route path="/volunteer" element={user ? <Volunteer user={user} /> : <Navigate to="/login" />} />
                 <Route path="/donate" element={user ? <Donate user={user} /> : <Navigate to="/login" />} />
