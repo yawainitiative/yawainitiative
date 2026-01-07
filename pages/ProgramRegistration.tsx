@@ -1,17 +1,21 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, CheckCircle, ArrowLeft, Loader2, Send, 
-  Target, Rocket, Users, Info
+  Target, Rocket, Users, Info, Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLogo } from '../contexts/LogoContext';
 import { supabase } from '../services/supabase';
+import { contentService } from '../services/contentService';
+import { Program } from '../types';
 
 const ProgramRegistration: React.FC = () => {
   const { logoUrl } = useLogo();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [skillTracks, setSkillTracks] = useState<Program[]>([]);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -22,39 +26,22 @@ const ProgramRegistration: React.FC = () => {
     motivation: ''
   });
 
-  // Static high-quality images matching user's specific visual requests
-  const skillTracks = [
-    { 
-      id: 'graphics', 
-      title: 'Graphics Design', 
-      image: 'https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?q=80&w=800',
-      desc: 'Master visual communication and modern design tools in a professional workstation setup.' 
-    },
-    { 
-      id: 'video', 
-      title: 'Video Editing', 
-      image: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=800',
-      desc: 'Cinematic storytelling and professional color grading with modern post-production software.' 
-    },
-    { 
-      id: 'gele', 
-      title: 'Auto-Gele & Style', 
-      image: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?q=80&w=800',
-      desc: 'Learn the artistry of intricate Nigerian gele headwraps and traditional fashion styling.' 
-    },
-    { 
-      id: 'soap', 
-      title: 'Liquid Soap Making', 
-      image: 'https://images.unsplash.com/photo-1605264964528-06403738d6dc?q=80&w=800',
-      desc: 'Formulate eco-friendly, plant-based dish soaps and natural fragrance products.' 
-    },
-    { 
-      id: 'pastries', 
-      title: 'Pastries Production', 
-      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=800',
-      desc: 'Professional gourmet baking and catering skills for aspiring culinary experts.' 
-    },
-  ];
+  useEffect(() => {
+    const fetchSkills = async () => {
+      setLoading(true);
+      try {
+        const allPrograms = await contentService.fetchPrograms();
+        // Filter for Skill Acquisition category specifically
+        const skills = allPrograms.filter(p => p.category === 'Skill Acquisition');
+        setSkillTracks(skills);
+      } catch (err) {
+        console.error("Failed to load skills:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSkills();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +49,7 @@ const ProgramRegistration: React.FC = () => {
       alert("Please select a skill track first.");
       return;
     }
-    setLoading(true);
+    setSubmitting(true);
     
     try {
       const { error } = await supabase
@@ -76,15 +63,15 @@ const ProgramRegistration: React.FC = () => {
             program_name: '3-Month Skill Acquisition 2026'
         }]);
 
-      if (error) console.warn("Table might not exist, simulating success.");
+      if (error) throw error;
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
+      alert("Registration failed. Please check your connection.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -135,7 +122,7 @@ const ProgramRegistration: React.FC = () => {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yawai-gold to-yellow-300">Empower Your Future.</span>
           </h1>
           <p className="text-slate-400 text-lg md:text-xl max-w-2xl mb-8 animate-slide-up font-medium leading-relaxed" style={{ animationDelay: '0.1s' }}>
-            The 2026 3-Month Skill Acquisition Program is now accepting pre-registrations. Secure your spot in the most impactful training cohort yet.
+            Our 3-Month Skill Acquisition Program is now accepting registrations. Uploaded and managed directly from the YAWAI Admin Portal.
           </p>
           <div className="flex flex-wrap justify-center md:justify-start gap-4 md:gap-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
              <div className="flex items-center gap-2 text-slate-300">
@@ -160,7 +147,7 @@ const ProgramRegistration: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
             <div>
               <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">Explore the Tracks</h2>
-              <p className="text-slate-500 max-w-xl text-lg font-medium">Choose a skill track to view details and begin your registration.</p>
+              <p className="text-slate-500 max-w-xl text-lg font-medium">Choose a track to begin. These are managed manually via Admin Content Manager.</p>
             </div>
             <div className="bg-white px-6 py-5 rounded-[2rem] shadow-soft border border-slate-100 flex items-center gap-4">
                <div className="w-14 h-14 bg-yawai-gold/10 rounded-2xl flex items-center justify-center text-yawai-gold">
@@ -173,40 +160,54 @@ const ProgramRegistration: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-            {skillTracks.map((track) => (
-              <button 
-                key={track.id} 
-                onClick={() => setFormData({...formData, selectedSkill: track.title})}
-                className={`group text-left bg-white rounded-[2.5rem] overflow-hidden shadow-soft border transition-all duration-300 active:scale-[0.98]
-                  ${formData.selectedSkill === track.title 
-                    ? 'border-yawai-gold ring-4 ring-yawai-gold/10 scale-[1.02] shadow-xl' 
-                    : 'border-slate-100 hover:border-yawai-gold/40 hover:-translate-y-2'
-                  }
-                `}
-              >
-                <div className="relative h-64 overflow-hidden">
-                   <img src={track.image} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" alt={track.title} />
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                   
-                   {/* Selection Feedback Overlay */}
-                   {formData.selectedSkill === track.title && (
-                     <div className="absolute top-4 right-4 bg-yawai-gold text-yawai-blue p-1.5 rounded-full shadow-lg border-2 border-white animate-bounce">
-                       <CheckCircle size={20} />
-                     </div>
-                   )}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+               {[1,2,3,4,5].map(i => (
+                 <div key={i} className="bg-white rounded-[2.5rem] h-80 animate-pulse border border-slate-100" />
+               ))}
+            </div>
+          ) : skillTracks.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+              {skillTracks.map((track) => (
+                <button 
+                  key={track.id} 
+                  onClick={() => setFormData({...formData, selectedSkill: track.title})}
+                  className={`group text-left bg-white rounded-[2.5rem] overflow-hidden shadow-soft border transition-all duration-300 active:scale-[0.98]
+                    ${formData.selectedSkill === track.title 
+                      ? 'border-yawai-gold ring-4 ring-yawai-gold/10 scale-[1.02] shadow-xl' 
+                      : 'border-slate-100 hover:border-yawai-gold/40 hover:-translate-y-2'
+                    }
+                  `}
+                >
+                  <div className="relative h-64 overflow-hidden bg-slate-100">
+                     <img src={track.image} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" alt={track.title} />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                     
+                     {/* Selection Feedback Overlay */}
+                     {formData.selectedSkill === track.title && (
+                       <div className="absolute top-4 right-4 bg-yawai-gold text-yawai-blue p-1.5 rounded-full shadow-lg border-2 border-white animate-bounce">
+                         <CheckCircle size={20} />
+                       </div>
+                     )}
 
-                   <div className="absolute bottom-6 left-6 right-6">
-                      <h3 className="font-black text-xl text-white mb-1 leading-tight">{track.title}</h3>
-                      <p className="text-white/70 text-[10px] font-black uppercase tracking-widest">3 Month Intensive</p>
-                   </div>
-                </div>
-                <div className="p-6">
-                  <p className="text-slate-500 text-sm leading-relaxed font-medium">{track.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
+                     <div className="absolute bottom-6 left-6 right-6">
+                        <h3 className="font-black text-xl text-white mb-1 leading-tight">{track.title}</h3>
+                        <p className="text-white/70 text-[10px] font-black uppercase tracking-widest">{track.duration || '3 Month Intensive'}</p>
+                     </div>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-slate-500 text-sm leading-relaxed font-medium line-clamp-2">{track.description}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
+               <Sparkles size={48} className="mx-auto mb-4 text-slate-200" />
+               <p className="text-xl font-black text-slate-800">No Skill Tracks Uploaded</p>
+               <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">Go to Admin &rarr; Content Manager and add Programs with the category "Skill Acquisition" to see them here.</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -300,21 +301,12 @@ const ProgramRegistration: React.FC = () => {
                   />
                 </div>
 
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-[10px] text-slate-500 flex items-start gap-4">
-                   <div className="w-6 h-6 bg-yawai-gold/10 rounded flex items-center justify-center text-yawai-gold shrink-0 mt-0.5">
-                     <Target size={14} />
-                   </div>
-                   <p className="font-bold uppercase tracking-tight leading-relaxed">
-                     Official verification for this program begins on <strong>Monday, Jan 6th</strong>. By registering, you agree to attend all classes and engage fully in the 3-month curriculum.
-                   </p>
-                </div>
-
                 <button 
                   type="submit" 
-                  disabled={loading}
+                  disabled={submitting}
                   className="w-full bg-yawai-blue text-white py-5 rounded-[1.5rem] font-black text-lg hover:bg-slate-800 transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95"
                 >
-                  {loading ? (
+                  {submitting ? (
                     <Loader2 className="animate-spin" size={24} />
                   ) : (
                     <>
@@ -333,11 +325,6 @@ const ProgramRegistration: React.FC = () => {
          <div className="max-w-7xl mx-auto px-6">
             <h4 className="text-xl font-black mb-2">Youngsters and Women Advancement Initiative</h4>
             <p className="text-slate-500 text-sm mb-8 font-medium">Equipping the next generation of leaders and innovators.</p>
-            <div className="flex justify-center gap-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-               <span className="hover:text-white cursor-pointer transition-colors border-b border-transparent hover:border-yawai-gold pb-1">Privacy</span>
-               <span className="hover:text-white cursor-pointer transition-colors border-b border-transparent hover:border-yawai-gold pb-1">Terms</span>
-               <span className="hover:text-white cursor-pointer transition-colors border-b border-transparent hover:border-yawai-gold pb-1">Inquiries</span>
-            </div>
          </div>
       </footer>
     </div>

@@ -25,7 +25,8 @@ export interface SocialPost {
 export interface Program {
   id: string;
   title: string;
-  category: 'Digital Skills' | 'Business' | 'Leadership' | 'Empowerment';
+  // Added 'Skill Acquisition' to the category union to allow filtering for training tracks
+  category: 'Digital Skills' | 'Business' | 'Leadership' | 'Empowerment' | 'Skill Acquisition';
   description: string;
   duration: string;
   image: string;
