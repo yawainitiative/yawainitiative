@@ -26,32 +26,32 @@ const ProgramRegistration: React.FC = () => {
     { 
       id: 'graphics', 
       title: 'Graphics Design', 
-      image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=800',
-      desc: 'Master visual communication and modern tools.' 
+      image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=800',
+      desc: 'Master visual communication and modern design tools.' 
     },
     { 
       id: 'video', 
       title: 'Video Editing', 
-      image: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800',
-      desc: 'Cinematic storytelling and professional editing.' 
+      image: 'https://images.unsplash.com/photo-1574717024453-354056afd6ec?q=80&w=800',
+      desc: 'Professional cinematic storytelling and post-production.' 
     },
     { 
       id: 'gele', 
       title: 'Auto-Gele & Style', 
       image: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?q=80&w=800',
-      desc: 'Crafting trendy pre-tied headwraps and fashion.' 
+      desc: 'Artistry in traditional headwraps and modern fashion.' 
     },
     { 
       id: 'soap', 
       title: 'Liquid Soap Making', 
-      image: 'https://images.unsplash.com/photo-1600857062241-98e5dba7f214?q=80&w=800',
-      desc: 'Chemical formulation and branding products.' 
+      image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800',
+      desc: 'Eco-friendly formulation and product branding.' 
     },
     { 
       id: 'pastries', 
       title: 'Pastries Production', 
       image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=800',
-      desc: 'Baking and catering for aspiring chefs.' 
+      desc: 'Gourmet baking and professional catering skills.' 
     },
   ];
 
@@ -184,9 +184,9 @@ const ProgramRegistration: React.FC = () => {
                   }
                 `}
               >
-                <div className="relative h-56 overflow-hidden">
+                <div className="relative h-64 overflow-hidden">
                    <img src={track.image} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" alt={track.title} />
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                    
                    {/* Selection Feedback Overlay */}
                    {formData.selectedSkill === track.title && (
@@ -197,7 +197,7 @@ const ProgramRegistration: React.FC = () => {
 
                    <div className="absolute bottom-6 left-6 right-6">
                       <h3 className="font-black text-xl text-white mb-1 leading-tight">{track.title}</h3>
-                      <p className="text-white/70 text-xs font-bold uppercase tracking-widest">3 Month Intensive</p>
+                      <p className="text-white/70 text-[10px] font-black uppercase tracking-widest">3 Month Intensive</p>
                    </div>
                 </div>
                 <div className="p-6">
