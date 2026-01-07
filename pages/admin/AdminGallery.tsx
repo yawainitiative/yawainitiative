@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, Trash2, Loader2, Image as ImageIcon, RefreshCw, 
-  Upload, HardDrive, X, Save, AlertCircle, Camera
+  Upload, X, Save, AlertCircle, Camera, CheckCircle
 } from 'lucide-react';
 import { contentService, GalleryImage } from '../../services/contentService';
 import { supabase } from '../../services/supabase';
@@ -13,22 +13,12 @@ const AdminGallery: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [bucketStatus, setBucketStatus] = useState<'checking' | 'ok' | 'missing'>('checking');
   
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
-  const [caption, setCaption] = useState('');
+  // Multiple Files State
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadPreviews, setUploadPreviews] = useState<{id: string, url: string}[]>([]);
+  const [globalCaption, setGlobalCaption] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const checkBucket = async () => {
-    try {
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const exists = buckets?.some(b => b.name === 'content');
-      setBucketStatus(exists ? 'ok' : 'missing');
-    } catch (e) {
-      setBucketStatus('missing');
-    }
-  };
 
   const loadGallery = async () => {
     setLoading(true);
@@ -39,45 +29,68 @@ const AdminGallery: React.FC = () => {
 
   useEffect(() => {
     loadGallery();
-    checkBucket();
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newFiles = [...selectedFiles, ...files];
+    setSelectedFiles(newFiles);
+
+    // Generate previews
+    files.forEach(file => {
       const reader = new FileReader();
-      reader.onloadend = () => setUploadPreview(reader.result as string);
+      reader.onloadend = () => {
+        setUploadPreviews(prev => [
+          ...prev, 
+          { id: Math.random().toString(36).substr(2, 9), url: reader.result as string }
+        ]);
+      };
       reader.readAsDataURL(file);
-    }
+    });
+  };
+
+  const removeSelectedFile = (index: number) => {
+    const newFiles = [...selectedFiles];
+    newFiles.splice(index, 1);
+    setSelectedFiles(newFiles);
+
+    const newPreviews = [...uploadPreviews];
+    newPreviews.splice(index, 1);
+    setUploadPreviews(newPreviews);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile && !uploadPreview) {
-      setSaveError("Please select an image or provide a URL.");
+    if (selectedFiles.length === 0) {
+      setSaveError("Please select at least one image to upload.");
       return;
     }
 
+    // Fix: line 50 might be close to here in the actual environment.
+    // Ensuring setIsSaving receives a boolean and the subsequent map is strictly typed.
     setIsSaving(true);
     setSaveError(null);
 
     try {
-      let finalUrl = uploadPreview || '';
+      // Process all uploads in parallel
+      // Explicitly typing 'file' as 'File' to prevent 'unknown' inference issues.
+      const uploadPromises = selectedFiles.map(async (file: File) => {
+        const publicUrl = await contentService.uploadImage(file);
+        return contentService.addGalleryImage(publicUrl, globalCaption);
+      });
 
-      if (selectedFile) {
-        finalUrl = await contentService.uploadImage(selectedFile);
-      }
-
-      await contentService.addGalleryImage(finalUrl, caption);
+      await Promise.all(uploadPromises);
       
+      // Cleanup
       setIsModalOpen(false);
-      setUploadPreview(null);
-      setSelectedFile(null);
-      setCaption('');
+      setUploadPreviews([]);
+      setSelectedFiles([]);
+      setGlobalCaption('');
       loadGallery();
     } catch (err: any) {
-      setSaveError(err.message || "Failed to upload image.");
+      setSaveError(err.message || "Failed to upload one or more images. Check your connection or Supabase storage limits.");
     } finally {
       setIsSaving(false);
     }
@@ -99,7 +112,7 @@ const AdminGallery: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Media Gallery Manager</h2>
-          <p className="text-slate-500 text-sm">Upload and manage photos for the impact gallery.</p>
+          <p className="text-slate-500 text-sm">Upload multiple photos for community outreaches and memorial events.</p>
         </div>
         <div className="flex gap-2">
           <button 
@@ -113,7 +126,7 @@ const AdminGallery: React.FC = () => {
             className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg"
           >
             <Plus size={18} />
-            <span>Upload Photo</span>
+            <span>Upload Photos</span>
           </button>
         </div>
       </div>
@@ -143,20 +156,23 @@ const AdminGallery: React.FC = () => {
         <div className="py-24 text-center text-slate-400 bg-white rounded-2xl border-2 border-dashed border-slate-200">
            <Camera size={64} className="mx-auto mb-4 opacity-10" />
            <p className="font-bold text-slate-600">No gallery images</p>
-           <p className="text-sm">Click "Upload Photo" to start building your visual impact story.</p>
+           <p className="text-sm">Click "Upload Photos" to start building your visual impact story.</p>
         </div>
       )}
 
-      {/* UPLOAD MODAL */}
+      {/* MULTI-UPLOAD MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up">
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up">
              <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h3 className="text-2xl font-black text-slate-900">Upload to Gallery</h3>
+                <div>
+                   <h3 className="text-2xl font-black text-slate-900">Batch Upload</h3>
+                   <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">{selectedFiles.length} images selected</p>
+                </div>
                 <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={24} /></button>
              </div>
 
-             <form onSubmit={handleSave} className="p-8 space-y-6">
+             <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto no-scrollbar">
                 {saveError && (
                   <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
                     <AlertCircle size={18} />
@@ -165,11 +181,23 @@ const AdminGallery: React.FC = () => {
                 )}
 
                 <div className="space-y-4">
+                   {/* Caption for the whole batch */}
+                   <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Caption (Applied to all images)</label>
+                     <input 
+                       value={globalCaption}
+                       onChange={e => setGlobalCaption(e.target.value)}
+                       placeholder="e.g. Outreach at Ikorodu Community"
+                       className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 outline-none focus:border-slate-900 transition-all font-medium"
+                     />
+                   </div>
+
+                   {/* Dropzone / Picker */}
                    <div 
                      onClick={() => fileInputRef.current?.click()}
                      className={`
                        group border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all
-                       ${uploadPreview ? 'border-green-400 bg-green-50/20' : 'border-slate-200 hover:border-slate-400 bg-slate-50'}
+                       ${uploadPreviews.length > 0 ? 'border-indigo-400 bg-indigo-50/10' : 'border-slate-200 hover:border-slate-400 bg-slate-50'}
                      `}
                    >
                      <input 
@@ -178,43 +206,52 @@ const AdminGallery: React.FC = () => {
                         onChange={handleFileChange} 
                         className="hidden" 
                         accept="image/*" 
+                        multiple
                       />
-                     {uploadPreview ? (
-                        <div className="w-full aspect-video rounded-xl overflow-hidden shadow-md relative">
-                           <img src={uploadPreview} className="w-full h-full object-cover" alt="Preview" />
-                           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                              <p className="text-white text-xs font-bold">Click to Change</p>
-                           </div>
-                        </div>
-                     ) : (
-                        <>
-                          <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-yawai-blue">
-                             <Upload size={24} />
-                          </div>
-                          <p className="text-sm font-bold text-slate-600">Select Impact Photo</p>
-                        </>
-                     )}
+                     <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-yawai-blue">
+                        <Upload size={24} />
+                     </div>
+                     <p className="text-sm font-bold text-slate-600">Add More Photos</p>
                    </div>
 
-                   <div className="space-y-1.5">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Optional Caption</label>
-                     <input 
-                       value={caption}
-                       onChange={e => setCaption(e.target.value)}
-                       placeholder="e.g. Graduation Batch 2025"
-                       className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 outline-none focus:border-slate-900 transition-all font-medium"
-                     />
-                   </div>
+                   {/* Preview Grid */}
+                   {uploadPreviews.length > 0 && (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 pt-4">
+                        {uploadPreviews.map((preview, idx) => (
+                           <div key={preview.id} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group">
+                              <img src={preview.url} className="w-full h-full object-cover" alt="" />
+                              <button 
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeSelectedFile(idx); }}
+                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                 <X size={12} />
+                              </button>
+                           </div>
+                        ))}
+                      </div>
+                   )}
                 </div>
 
-                <button 
-                  type="submit"
-                  disabled={isSaving || (!uploadPreview && !selectedFile)}
-                  className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all shadow-xl active:scale-95 disabled:opacity-50"
-                >
-                  {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Save size={20} />}
-                  <span>{isSaving ? 'Uploading Photo...' : 'Publish to Gallery'}</span>
-                </button>
+                <div className="sticky bottom-0 bg-white pt-4 pb-2">
+                   <button 
+                     type="submit"
+                     disabled={isSaving || selectedFiles.length === 0}
+                     className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-bold flex items-center justify-center gap-3 hover:bg-slate-800 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+                   >
+                     {isSaving ? (
+                        <>
+                           <Loader2 size={24} className="animate-spin" />
+                           <span>Processing {selectedFiles.length} uploads...</span>
+                        </>
+                     ) : (
+                        <>
+                           <Save size={20} />
+                           <span>Publish {selectedFiles.length} Photos to Gallery</span>
+                        </>
+                     )}
+                   </button>
+                </div>
              </form>
           </div>
         </div>
