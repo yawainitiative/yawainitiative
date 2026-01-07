@@ -71,13 +71,16 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
       <header className="md:hidden bg-white/95 backdrop-blur-md text-yawai-blue p-4 flex justify-between items-center sticky top-0 z-[60] border-b border-slate-100 shadow-sm h-16">
         <div className="flex items-center gap-2">
            {logoUrl ? (
-             <img src={logoUrl} alt="Logo" className="w-8 h-8 object-cover rounded-full" />
+             <img src={logoUrl} alt="Logo" className="w-8 h-8 object-cover rounded-full border border-slate-100" />
            ) : (
              <div className="w-8 h-8 bg-gradient-to-tr from-yawai-gold to-yellow-300 rounded-lg flex items-center justify-center text-yawai-blue font-bold text-lg shadow-sm">Y</div>
            )}
-           <h1 className="text-lg font-extrabold tracking-tight">YAWAI</h1>
+           <div className="flex flex-col">
+             <h1 className="text-lg font-extrabold tracking-tight leading-none">YAWAI</h1>
+             <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Everyone Matters</span>
+           </div>
         </div>
-        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
            {user.role}
         </div>
       </header>
@@ -93,7 +96,7 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
             )}
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white leading-none">YAWAI</h1>
-              <p className="text-[10px] text-slate-400 font-medium tracking-widest uppercase mt-1">Empowerment</p>
+              <p className="text-[10px] text-yawai-gold font-black tracking-widest uppercase mt-1">Everyone Matters</p>
             </div>
           </div>
           <div className="h-px bg-gradient-to-r from-slate-700/50 via-slate-700 to-slate-700/50 mb-6" />
@@ -176,7 +179,7 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
     </div>
   );
 };
-
+// ... rest of the file stays same
 const ProtectedAdminRoute = ({ user }: { user: UserType | null }) => {
   if (!user || user.role !== 'admin') {
     return <Navigate to="/admin" replace />;

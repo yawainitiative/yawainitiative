@@ -18,7 +18,8 @@ import {
   Heart,
   Star,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Send
 } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 
@@ -79,8 +80,25 @@ const AdminApplications: React.FC = () => {
     }
   };
 
+  const handleSendEmail = (item: any) => {
+    const name = item.full_name || item.user_name || 'there';
+    const track = item.skill_track || item.event_title || item.task_title || 'YAWAI Program';
+    
+    const subject = encodeURIComponent(`Application Received: ${track} - YAWAI`);
+    const body = encodeURIComponent(
+      `Dear ${name},\n\n` +
+      `Thank you for applying for the ${track} track with the Youngsters and Women Advancement Initiative (YAWAI).\n\n` +
+      `We have received your application and it is currently being reviewed by our team. We will contact you shortly with the next steps regarding your admission/participation.\n\n` +
+      `In the meantime, feel free to follow us on social media for updates.\n\n` +
+      `Best regards,\n` +
+      `YAWAI Administrative Team`
+    );
+
+    window.location.href = `mailto:${item.email}?subject=${subject}&body=${body}`;
+  };
+
   const filteredData = data.filter(item => {
-    const name = (item.full_name || item.email || '').toLowerCase();
+    const name = (item.full_name || item.user_name || item.email || '').toLowerCase();
     return name.includes(searchQuery.toLowerCase());
   });
 
@@ -105,7 +123,6 @@ const AdminApplications: React.FC = () => {
         </button>
       </div>
 
-      {/* Nav Tabs */}
       <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm w-fit">
         {tabs.map(tab => (
           <button
@@ -124,7 +141,6 @@ const AdminApplications: React.FC = () => {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
         <div className="relative w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -138,7 +154,6 @@ const AdminApplications: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-[400px] text-slate-400">
@@ -185,10 +200,11 @@ const AdminApplications: React.FC = () => {
                     <td className="p-4 text-right pr-6">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                          <button 
-                           onClick={(e) => { e.stopPropagation(); window.open(`mailto:${item.email}`); }}
-                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                           onClick={(e) => { e.stopPropagation(); handleSendEmail(item); }}
+                           className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all flex items-center gap-1.5"
+                           title="Send Confirmation Email"
                          >
-                           <Mail size={16} />
+                           <Send size={16} />
                          </button>
                          <button 
                            onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
@@ -215,12 +231,10 @@ const AdminApplications: React.FC = () => {
         )}
       </div>
 
-      {/* ITEM DETAIL MODAL */}
       {selectedItem && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 animate-fade-in">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedItem(null)} />
           <div className="relative bg-white w-full max-w-2xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up">
-            
             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
                <div className="flex items-center gap-4">
                  <div className="w-14 h-14 bg-slate-900 text-yawai-gold rounded-2xl flex items-center justify-center font-black text-xl shadow-lg">
@@ -286,10 +300,11 @@ const AdminApplications: React.FC = () => {
 
             <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex gap-4 shrink-0">
                <button 
-                 onClick={() => { window.open(`mailto:${selectedItem.email}?subject=Regarding your ${activeTab.slice(0, -1)} application`); }}
-                 className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-2"
+                 onClick={() => handleSendEmail(selectedItem)}
+                 className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.98]"
                >
-                 Contact Submitter
+                 <Send size={20} className="text-yawai-gold" />
+                 Send Confirmation Email
                </button>
                <button 
                 onClick={() => handleDelete(selectedItem.id)}
