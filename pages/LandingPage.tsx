@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle, Heart, Users, BookOpen, Shield, Globe, Rocket, Calendar, Instagram, Facebook, Twitter, Linkedin } from 'lucide-react';
+import { ArrowRight, CheckCircle, Heart, Users, BookOpen, Shield, Globe, Rocket, Calendar, Instagram, Facebook, Twitter, Linkedin, Image as ImageIcon } from 'lucide-react';
 import { useLogo } from '../contexts/LogoContext';
 
 const LandingPage: React.FC = () => {
@@ -22,19 +22,27 @@ const LandingPage: React.FC = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-4 md:gap-8">
             <Link 
-              to="/login" 
-              className="hidden sm:block text-sm font-bold text-slate-600 hover:text-yawai-blue transition-colors px-3"
+              to="/gallery" 
+              className="hidden sm:flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-yawai-blue transition-colors px-3"
             >
-              Sign In
+              <ImageIcon size={18} className="text-yawai-gold" /> Gallery
             </Link>
-            <Link 
-              to="/signup" 
-              className="bg-yawai-blue text-white px-5 md:px-8 py-2.5 md:py-3 rounded-full text-xs md:text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-blue-900/20 active:scale-95"
-            >
-              Join Movement
-            </Link>
+            <div className="flex items-center gap-2 md:gap-4">
+              <Link 
+                to="/login" 
+                className="hidden sm:block text-sm font-bold text-slate-600 hover:text-yawai-blue transition-colors px-3"
+              >
+                Sign In
+              </Link>
+              <Link 
+                to="/signup" 
+                className="bg-yawai-blue text-white px-5 md:px-8 py-2.5 md:py-3 rounded-full text-xs md:text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-blue-900/20 active:scale-95"
+              >
+                Join Movement
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -183,10 +191,9 @@ const LandingPage: React.FC = () => {
               <div>
                 <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6">Initiatives</h4>
                 <ul className="space-y-4 text-sm font-bold text-slate-500">
-                  <li><Link to="/programs" className="hover:text-yawai-blue transition-colors">Skill Acquisition</Link></li>
-                  <li><Link to="/events" className="hover:text-yawai-blue transition-colors">Youth Summits</Link></li>
+                  <li><Link to="/skill-acquisition" className="hover:text-yawai-blue transition-colors">Skill Acquisition</Link></li>
+                  <li><Link to="/gallery" className="hover:text-yawai-blue transition-colors">Impact Gallery</Link></li>
                   <li><Link to="/donate" className="hover:text-yawai-blue transition-colors">Donation Hub</Link></li>
-                  <li><Link to="/volunteer" className="hover:text-yawai-blue transition-colors">Volunteer Hub</Link></li>
                 </ul>
               </div>
               <div>
@@ -195,7 +202,7 @@ const LandingPage: React.FC = () => {
                   <li><button className="hover:text-yawai-blue transition-colors">About Us</button></li>
                   <li><button className="hover:text-yawai-blue transition-colors">Our Impact</button></li>
                   <li><button className="hover:text-yawai-blue transition-colors">Contact</button></li>
-                  <li><Link to="/login" className="hover:text-yawai-blue transition-colors">Partner Portal</Link></li>
+                  <li><Link to="/admin" className="hover:text-yawai-blue transition-colors">Admin Portal</Link></li>
                 </ul>
               </div>
             </div>

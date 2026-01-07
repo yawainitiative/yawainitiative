@@ -49,9 +49,10 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
   const { logoUrl } = useLogo();
   const { pathname } = useLocation();
   
-  const isNoLayoutPage = (!user && pathname === '/') || ['/login', '/signup', '/skill-acquisition', '/complete-profile'].includes(pathname);
+  // Public pages that do not use the 'App' layout (sidebar/bottom nav)
+  const isPublicPage = (!user && pathname === '/') || ['/login', '/signup', '/skill-acquisition', '/complete-profile', '/gallery'].includes(pathname);
   
-  if (!user || isNoLayoutPage || (user && !isProfileComplete(user) && pathname !== '/complete-profile' && pathname !== '/')) {
+  if (!user || isPublicPage || (user && !isProfileComplete(user) && pathname !== '/complete-profile' && pathname !== '/')) {
     return <>{children}</>;
   }
 
@@ -59,7 +60,6 @@ const PublicLayout: React.FC<{ children: React.ReactNode, user: UserType | null,
     { icon: Home, label: 'Home', path: '/' },
     { icon: BookOpen, label: 'Programs', path: '/programs' },
     { icon: Calendar, label: 'Events', path: '/events' },
-    { icon: Image, label: 'Media', path: '/gallery' },
     { icon: Heart, label: 'Donate', path: '/donate' },
     { icon: User, label: 'Profile', path: '/profile' },
   ];
@@ -282,9 +282,9 @@ const App: React.FC = () => {
                 <Route path="/complete-profile" element={
                     user ? (isProfileComplete(user) ? <Navigate to="/" replace /> : <Onboarding user={user} />) : <Navigate to="/login" replace />
                 } />
+                <Route path="/gallery" element={<Gallery />} />
                 <Route path="/programs" element={user ? <Programs /> : <Navigate to="/login" />} />
                 <Route path="/events" element={user ? <Events /> : <Navigate to="/login" />} />
-                <Route path="/gallery" element={user ? <Gallery /> : <Navigate to="/login" />} />
                 <Route path="/opportunities" element={user ? <Opportunities /> : <Navigate to="/login" />} />
                 <Route path="/volunteer" element={user ? <Volunteer user={user} /> : <Navigate to="/login" />} />
                 <Route path="/donate" element={user ? <Donate user={user} /> : <Navigate to="/login" />} />
