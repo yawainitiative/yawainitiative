@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   Users, Calendar, RefreshCw, Share2, HardDrive, 
   CheckCircle2, XCircle, ExternalLink, Database, 
-  Copy, Check, ShieldCheck
+  Copy, Check, ShieldCheck, AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
@@ -11,7 +11,6 @@ import { supabase } from '../../services/supabase';
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [storageStatus, setStorageStatus] = useState<'checking' | 'ok' | 'missing' | 'restricted'>('checking');
   const [dbSchemaStatus, setDbSchemaStatus] = useState<{table: string, exists: boolean}[]>([]);
   const [copied, setCopied] = useState(false);
 
@@ -26,7 +25,7 @@ const AdminDashboard: React.FC = () => {
     'app_settings'
   ];
 
-  const fullSqlSchema = `-- 1. Create Tables
+  const fullSqlSchema = `-- 1. Create Programs Table
 CREATE TABLE IF NOT EXISTS public.programs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     title TEXT NOT NULL,
@@ -37,34 +36,35 @@ CREATE TABLE IF NOT EXISTS public.programs (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 2. Enable RLS
-ALTER TABLE public.programs ENABLE ROW LEVEL SECURITY;
+-- 2. Create Applications Table
+CREATE TABLE IF NOT EXISTS public.program_applications (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    full_name TEXT,
+    email TEXT,
+    phone TEXT,
+    skill_track TEXT,
+    motivation TEXT,
+    program_name TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
 
--- 3. Create Public Access Policy (Required for the Registration page to see data)
+-- 3. Enable RLS
+ALTER TABLE public.programs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.program_applications ENABLE ROW LEVEL SECURITY;
+
+-- 4. Enable Public Access (CRITICAL)
 DROP POLICY IF EXISTS "Public Select" ON public.programs;
 CREATE POLICY "Public Select" ON public.programs FOR SELECT USING (true);
 
--- 4. Create Admin Policy
-DROP POLICY IF EXISTS "Admin All" ON public.programs;
+DROP POLICY IF EXISTS "Public Insert App" ON public.program_applications;
+CREATE POLICY "Public Insert App" ON public.program_applications FOR INSERT WITH CHECK (true);
+
+-- 5. Admin Full Access
 CREATE POLICY "Admin All" ON public.programs FOR ALL USING (true);`;
 
   const checkSystemHealth = async () => {
     setLoading(true);
     try {
-      // 1. Check Storage - More robust check
-      try {
-        const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-        if (bucketError) {
-          // If we can't list buckets, we check if we can at least see the public URL of a dummy file
-          setStorageStatus('restricted');
-        } else {
-          setStorageStatus(buckets?.some(b => b.name === 'content') ? 'ok' : 'missing');
-        }
-      } catch (e) {
-        setStorageStatus('restricted');
-      }
-
-      // 2. Check Tables
       const results = await Promise.all(
         tablesToCheck.map(async (tableName) => {
           const { error } = await supabase.from(tableName).select('*').limit(1);
@@ -72,7 +72,6 @@ CREATE POLICY "Admin All" ON public.programs FOR ALL USING (true);`;
         })
       );
       setDbSchemaStatus(results);
-
     } catch (err) {
       console.error("Health check failed:", err);
     } finally {
@@ -97,7 +96,7 @@ CREATE POLICY "Admin All" ON public.programs FOR ALL USING (true);`;
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">System Dashboard</h2>
-          <p className="text-slate-500">Infrastructure health and community metrics.</p>
+          <p className="text-slate-500">Infrastructure health and data status.</p>
         </div>
         <button 
           onClick={checkSystemHealth}
@@ -115,50 +114,47 @@ CREATE POLICY "Admin All" ON public.programs FOR ALL USING (true);`;
               <div className="p-3 bg-slate-900 text-yawai-gold rounded-2xl">
                 <ShieldCheck size={24} />
               </div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">System Setup Assistant</h3>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Database Health</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className={`p-6 rounded-3xl border-2 transition-all ${storageStatus === 'ok' || storageStatus === 'restricted' ? 'bg-green-50/50 border-green-100' : 'bg-red-50/50 border-red-100'}`}>
+              <div className={`p-6 rounded-3xl border-2 transition-all bg-blue-50/50 border-blue-100`}>
                 <div className="flex justify-between items-start mb-4">
-                  <div className={`p-3 rounded-2xl ${storageStatus === 'ok' || storageStatus === 'restricted' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                  <div className={`p-3 rounded-2xl bg-yawai-blue text-white`}>
                     <HardDrive size={24} />
                   </div>
-                  {storageStatus === 'ok' ? (
-                    <span className="bg-green-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase">Active</span>
-                  ) : storageStatus === 'restricted' ? (
-                    <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase">Verified via URL</span>
-                  ) : (
-                    <span className="bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase">Action Needed</span>
-                  )}
+                  <span className="bg-slate-400 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest">Storage Ready</span>
                 </div>
-                <h4 className="font-bold text-slate-900">Storage Bucket</h4>
-                <p className="text-xs text-slate-500 mt-1 font-medium">
-                  {storageStatus === 'restricted' 
-                    ? "Bucket 'content' is active but listing is restricted (this is normal)." 
-                    : "Bucket 'content' required for image uploads."}
+                <h4 className="font-bold text-slate-900">Media Bucket</h4>
+                <p className="text-[10px] text-slate-500 mt-1 font-medium leading-relaxed">
+                  Ensure you have a public bucket named <strong className="text-yawai-blue">'content'</strong> in Supabase Storage.
                 </p>
               </div>
 
-              <div className={`p-6 rounded-3xl border-2 transition-all ${missingTables.length === 0 ? 'bg-green-50/50 border-green-100' : 'bg-amber-50/50 border-amber-100'}`}>
+              <div className={`p-6 rounded-3xl border-2 transition-all ${missingTables.length === 0 ? 'bg-green-50/50 border-green-100' : 'bg-red-50/50 border-red-100'}`}>
                 <div className="flex justify-between items-start mb-4">
-                  <div className={`p-3 rounded-2xl ${missingTables.length === 0 ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'}`}>
+                  <div className={`p-3 rounded-2xl ${missingTables.length === 0 ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
                     <Database size={24} />
                   </div>
                   {missingTables.length === 0 ? (
-                    <span className="bg-green-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase">Healthy</span>
+                    <span className="bg-green-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest">Online</span>
                   ) : (
-                    <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase">{missingTables.length} Missing</span>
+                    <span className="bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest">Broken</span>
                   )}
                 </div>
-                <h4 className="font-bold text-slate-900">Database Schema</h4>
-                <p className="text-xs text-slate-500 mt-1 font-medium">Tables must exist in the 'public' schema.</p>
+                <h4 className="font-bold text-slate-900">Table Schema</h4>
+                <p className="text-[10px] text-slate-500 mt-1 font-medium leading-relaxed">
+                  {missingTables.length === 0 ? 'All systems operational.' : `${missingTables.length} tables missing from the public schema.`}
+                </p>
               </div>
             </div>
 
             {missingTables.length > 0 && (
-              <div className="mt-8 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Required Table Check</h5>
+              <div className="mt-8 p-6 bg-red-50 rounded-3xl border border-red-100">
+                <div className="flex items-center gap-2 text-red-600 mb-4">
+                  <AlertCircle size={18} />
+                  <h5 className="text-[10px] font-black uppercase tracking-[0.2em]">Required Tables Missing</h5>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {dbSchemaStatus.map(t => (
                     <div key={t.table} className={`flex items-center gap-2 px-3 py-1.5 bg-white border rounded-xl text-xs font-bold ${t.exists ? 'text-green-600 border-green-100' : 'text-red-500 border-red-100'}`}>
@@ -177,12 +173,12 @@ CREATE POLICY "Admin All" ON public.programs FOR ALL USING (true);`;
           </div>
           
           <div className="relative z-10">
-            <h3 className="text-xl font-black mb-2">Fix Database Policies</h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6 font-medium">
-              If data isn't showing on the app, run this SQL to enable public access for your tables.
+            <h3 className="text-xl font-black mb-2">Supabase Fix</h3>
+            <p className="text-slate-400 text-[10px] leading-relaxed mb-6 font-medium">
+              Run this SQL to enable Public Access for your registration page.
             </p>
 
-            <div className="bg-black/40 rounded-2xl p-4 mb-6 font-mono text-[10px] h-32 overflow-y-auto no-scrollbar border border-white/5 text-blue-300">
+            <div className="bg-black/40 rounded-2xl p-4 mb-6 font-mono text-[9px] h-32 overflow-y-auto no-scrollbar border border-white/5 text-blue-300">
               {fullSqlSchema}
             </div>
 
@@ -192,11 +188,11 @@ CREATE POLICY "Admin All" ON public.programs FOR ALL USING (true);`;
                 className="w-full bg-white text-slate-900 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition-all"
               >
                 {copied ? <Check size={20} className="text-green-600" /> : <Copy size={20} />}
-                {copied ? 'Copied' : 'Copy SQL Schema'}
+                {copied ? 'Copied' : 'Copy Fix Script'}
               </button>
               
               <a 
-                href="https://supabase.com/dashboard/project/txzxsomapiouqaknvrqq/sql/new" 
+                href="https://supabase.com/dashboard/project/_/sql/new" 
                 target="_blank" 
                 rel="noreferrer"
                 className="w-full bg-white/10 text-white py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-3 hover:bg-white/20 transition-all border border-white/10"

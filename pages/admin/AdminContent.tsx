@@ -11,7 +11,6 @@ const AdminContent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [bucketStatus, setBucketStatus] = useState<'checking' | 'ok' | 'missing' | 'restricted'>('checking');
   const [editId, setEditId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,16 +31,6 @@ const AdminContent: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
 
-  const checkBucket = async () => {
-    try {
-      const { data: buckets, error } = await supabase.storage.listBuckets();
-      if (error) setBucketStatus('restricted');
-      else setBucketStatus(buckets?.some(b => b.name === 'content') ? 'ok' : 'missing');
-    } catch (e) {
-      setBucketStatus('restricted');
-    }
-  };
-
   const loadContent = async () => {
     setLoading(true);
     try {
@@ -59,7 +48,6 @@ const AdminContent: React.FC = () => {
 
   useEffect(() => {
     loadContent();
-    checkBucket();
   }, [activeTab]);
 
   const handleEdit = (item: any) => {
@@ -133,7 +121,7 @@ const AdminContent: React.FC = () => {
       setEditId(null);
       loadContent();
     } catch (err: any) {
-      setSaveError(err.message || 'Error saving data.');
+      setSaveError(err.message || 'Error saving data. Check your Supabase bucket permissions.');
     } finally {
       setIsSaving(false);
     }
@@ -157,7 +145,25 @@ const AdminContent: React.FC = () => {
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
           <button 
-            onClick={() => { setEditId(null); setIsModalOpen(true); setFormData({...formData, title: '', description: '', image: '', category: 'Skill Track'}); setUploadPreview(null); }}
+            onClick={() => { 
+              setEditId(null); 
+              setIsModalOpen(true); 
+              setFormData({
+                title: '',
+                category: 'Skill Track',
+                type: 'Job',
+                description: '',
+                duration: '3 Months',
+                date: '',
+                location: '',
+                organization: '',
+                deadline: '',
+                link: '',
+                image: ''
+              }); 
+              setUploadPreview(null); 
+              setSelectedFile(null);
+            }}
             className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg active:scale-95"
           >
             <Plus size={18} />
@@ -219,7 +225,7 @@ const AdminContent: React.FC = () => {
                              </span>
                              {activeTab === 'programs' && isSkillRelated && (
                                <div className="flex items-center gap-1 text-[9px] font-black text-green-600 uppercase bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                                 <CheckCircle size={10} /> Live on Registration
+                                 <CheckCircle size={10} /> Live on Reg. Page
                                </div>
                              )}
                            </div>
@@ -252,17 +258,17 @@ const AdminContent: React.FC = () => {
              </div>
              
              <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto no-scrollbar">
-                {bucketStatus === 'missing' && (
+                {saveError && (
                   <div className="bg-red-50 p-5 rounded-2xl border border-red-100 flex gap-4 text-red-800">
                     <AlertCircle size={24} className="shrink-0" />
-                    <p className="text-xs leading-relaxed font-bold uppercase">Storage bucket 'content' is missing. Please create it as a Public bucket in your Supabase dashboard.</p>
+                    <p className="text-xs leading-relaxed font-bold uppercase">{saveError}</p>
                   </div>
                 )}
 
                 {activeTab === 'programs' && (
                   <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3 text-amber-800 text-xs font-bold">
                     <Info size={18} className="shrink-0" />
-                    <p>To show this as a skill track in the grid on the registration page, set Category to 'Skill Track'. Set to 'Skill Acquisition' for the main header.</p>
+                    <p>To show a skill card (like Video Editing) on the registration page, set Category to <strong>'Skill Track'</strong>.</p>
                   </div>
                 )}
 
@@ -276,7 +282,7 @@ const AdminContent: React.FC = () => {
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Category</label>
                       <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50 appearance-none font-bold">
-                        <option value="Skill Track">Skill Track (Inner Skill)</option>
+                        <option value="Skill Track">Skill Track (Individual Skill)</option>
                         <option value="Skill Acquisition">Skill Acquisition (Main Header)</option>
                         <option value="Digital Skills">Digital Skills</option>
                         <option value="Business">Business</option>
@@ -300,8 +306,17 @@ const AdminContent: React.FC = () => {
                 {(activeTab === 'programs' || activeTab === 'events') && (
                   <div className="space-y-4">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Display Image</label>
-                    <div onClick={() => fileInputRef.current?.click()} className={`group border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${uploadPreview ? 'border-green-400 bg-green-50/20' : 'border-slate-200 hover:border-red-400 bg-slate-50/50'}`}>
-                      <input type="file" fileInputRef={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                    <div 
+                      onClick={() => fileInputRef.current?.click()} 
+                      className={`group border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${uploadPreview ? 'border-green-400 bg-green-50/20' : 'border-slate-200 hover:border-red-400 bg-slate-50/50'}`}
+                    >
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        className="hidden" 
+                        accept="image/*" 
+                      />
                       {uploadPreview ? (
                         <img src={uploadPreview} className="w-full max-h-40 object-cover rounded-xl shadow-md" alt="" />
                       ) : (
@@ -314,7 +329,7 @@ const AdminContent: React.FC = () => {
                   </div>
                 )}
 
-                <button disabled={isSaving} type="submit" className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-bold shadow-xl flex items-center justify-center gap-3 disabled:opacity-50">
+                <button disabled={isSaving} type="submit" className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-bold shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]">
                   {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
                   <span>{isSaving ? 'Processing...' : editId ? 'Update' : 'Publish'}</span>
                 </button>

@@ -165,13 +165,6 @@ const AdminGallery: React.FC = () => {
                 )}
 
                 <div className="space-y-4">
-                   {bucketStatus === 'missing' && (
-                     <div className="p-4 bg-amber-50 rounded-xl text-amber-700 text-[10px] font-bold uppercase tracking-tight flex gap-2">
-                       <HardDrive size={16} />
-                       Bucket 'content' missing. Uploads will fail.
-                     </div>
-                   )}
-
                    <div 
                      onClick={() => fileInputRef.current?.click()}
                      className={`
@@ -179,7 +172,13 @@ const AdminGallery: React.FC = () => {
                        ${uploadPreview ? 'border-green-400 bg-green-50/20' : 'border-slate-200 hover:border-slate-400 bg-slate-50'}
                      `}
                    >
-                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                     <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        className="hidden" 
+                        accept="image/*" 
+                      />
                      {uploadPreview ? (
                         <div className="w-full aspect-video rounded-xl overflow-hidden shadow-md relative">
                            <img src={uploadPreview} className="w-full h-full object-cover" alt="Preview" />
