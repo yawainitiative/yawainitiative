@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Calendar, CheckCircle, ArrowLeft, Loader2, Send, 
-  Target, Rocket, Users, Info, Sparkles, AlertCircle, Database
+  Target, Rocket, Users, Info, Sparkles, AlertCircle, Database, Settings
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLogo } from '../contexts/LogoContext';
@@ -33,24 +33,29 @@ const ProgramRegistration: React.FC = () => {
       setErrorStatus(null);
       try {
         const allPrograms = await contentService.fetchPrograms();
-        // Check if data exists at all
+        
+        // Diagnostic: If we get here, the table exists.
         if (allPrograms.length === 0) {
-           setErrorStatus("NO_PROGRAMS_FOUND");
+           setErrorStatus("TABLE_EMPTY");
+        } else {
+           // Filter for Skill Acquisition category (Case-insensitive check)
+           const skills = allPrograms.filter(p => 
+             p.category?.toLowerCase().trim() === 'skill acquisition'
+           );
+           
+           if (skills.length === 0) {
+              setErrorStatus("NO_SKILLS_MATCH");
+           }
+           setSkillTracks(skills);
         }
-        
-        // Filter for Skill Acquisition category (Case-insensitive check)
-        const skills = allPrograms.filter(p => 
-          p.category?.toLowerCase() === 'skill acquisition'
-        );
-        
-        if (allPrograms.length > 0 && skills.length === 0) {
-           setErrorStatus("NO_SKILLS_CATEGORY");
-        }
-
-        setSkillTracks(skills);
       } catch (err: any) {
         console.error("Failed to load skills:", err);
-        setErrorStatus("DATABASE_ERROR");
+        // Error code 42P01 means table does not exist
+        if (err.code === '42P01') {
+          setErrorStatus("TABLE_MISSING");
+        } else {
+          setErrorStatus("DATABASE_ERROR");
+        }
       } finally {
         setLoading(false);
       }
@@ -137,18 +142,8 @@ const ProgramRegistration: React.FC = () => {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yawai-gold to-yellow-300">Empower Your Future.</span>
           </h1>
           <p className="text-slate-400 text-lg md:text-xl max-w-2xl mb-8 animate-slide-up font-medium leading-relaxed" style={{ animationDelay: '0.1s' }}>
-            Our 3-Month Skill Acquisition Program is now accepting registrations. Select your preferred track below to begin.
+            Select your preferred training track below. All tracks are managed via the YAWAI Admin Portal.
           </p>
-          <div className="flex flex-wrap justify-center md:justify-start gap-4 md:gap-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-             <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle size={18} className="text-yawai-gold" />
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Professional Training</span>
-             </div>
-             <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle size={18} className="text-yawai-gold" />
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Expert Facilitators</span>
-             </div>
-          </div>
         </div>
       </section>
 
@@ -204,34 +199,34 @@ const ProgramRegistration: React.FC = () => {
             </div>
           ) : (
             <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
-               {errorStatus === 'DATABASE_ERROR' ? (
+               {errorStatus === 'TABLE_MISSING' ? (
                  <>
                    <AlertCircle size={48} className="mx-auto mb-4 text-red-500" />
-                   <p className="text-xl font-black text-slate-800">Connection Issue</p>
-                   <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">Could not reach the database. Please ensure your Supabase project is active and tables are created.</p>
+                   <p className="text-xl font-black text-slate-800">Setup Required</p>
+                   <p className="text-sm text-slate-500 max-w-sm mx-auto mt-2">The 'programs' table is missing. Please go to the Admin Dashboard and run the Setup Script.</p>
                  </>
-               ) : errorStatus === 'NO_PROGRAMS_FOUND' ? (
+               ) : errorStatus === 'TABLE_EMPTY' ? (
                  <>
                    <Database size={48} className="mx-auto mb-4 text-slate-300" />
-                   <p className="text-xl font-black text-slate-800">Database Empty</p>
-                   <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">No programs found. Go to the Admin Dashboard &rarr; Content Manager to add your first training track.</p>
+                   <p className="text-xl font-black text-slate-800">No Data Yet</p>
+                   <p className="text-sm text-slate-500 max-w-sm mx-auto mt-2">Your database is ready but has no programs. Log in to the Admin Panel &rarr; Content Manager to add your first track.</p>
                  </>
                ) : (
                  <>
                    <Info size={48} className="mx-auto mb-4 text-yawai-gold" />
-                   <p className="text-xl font-black text-slate-800">No Skill Tracks Found</p>
-                   <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">We found programs in your DB, but none were tagged with the <strong>'Skill Acquisition'</strong> category.</p>
+                   <p className="text-xl font-black text-slate-800">Category Mismatch</p>
+                   <p className="text-sm text-slate-500 max-w-sm mx-auto mt-2">Programs exist, but none are tagged as <strong>'Skill Acquisition'</strong>. Please update your programs in the Admin Panel.</p>
                  </>
                )}
-               <Link to="/login" className="mt-8 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-yawai-blue bg-slate-50 px-6 py-2.5 rounded-xl border border-slate-200 hover:bg-white transition-all">
-                  Access Admin Dashboard
+               <Link to="/admin" className="mt-8 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-yawai-blue bg-slate-50 px-6 py-2.5 rounded-xl border border-slate-200 hover:bg-white transition-all shadow-sm">
+                  <Settings size={14} /> Open Admin Dashboard
                </Link>
             </div>
           )}
         </div>
       </section>
 
-      {/* Main Registration Form */}
+      {/* Registration Form */}
       <section id="register" className="py-24 px-6">
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden">
@@ -239,7 +234,7 @@ const ProgramRegistration: React.FC = () => {
                 <div className="absolute top-0 left-0 w-full h-full opacity-5 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
                 <Users size={48} className="mx-auto mb-4 text-yawai-gold" />
                 <h2 className="text-3xl md:text-4xl font-black mb-2 tracking-tight">Registration Portal</h2>
-                <p className="text-slate-400 font-medium">Please provide accurate details to secure your admission.</p>
+                <p className="text-slate-400 font-medium">Secure your spot in the January 2026 Batch.</p>
              </div>
              
              <form onSubmit={handleSubmit} className="p-8 md:p-14 space-y-8">
@@ -309,11 +304,11 @@ const ProgramRegistration: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Why are you joining this track?</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Motivation</label>
                   <textarea 
                     required
                     rows={4}
-                    placeholder="Briefly tell us about your goals and expectations..."
+                    placeholder="Briefly tell us why you want to join this track..."
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all resize-none font-medium"
                     value={formData.motivation}
                     onChange={e => setFormData({...formData, motivation: e.target.value})}
@@ -339,10 +334,10 @@ const ProgramRegistration: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer Overlay */}
+      {/* Footer */}
       <footer className="py-16 bg-slate-900 text-white text-center">
          <div className="max-w-7xl mx-auto px-6">
-            <h4 className="text-xl font-black mb-2">Youngsters and Women Advancement Initiative</h4>
+            <h4 className="text-xl font-black mb-2 tracking-tight">Youngsters and Women Advancement Initiative</h4>
             <p className="text-slate-500 text-sm mb-8 font-medium">Equipping the next generation of leaders and innovators.</p>
          </div>
       </footer>
