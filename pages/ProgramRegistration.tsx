@@ -22,36 +22,37 @@ const ProgramRegistration: React.FC = () => {
     motivation: ''
   });
 
+  // Static high-quality images matching user's specific visual requests
   const skillTracks = [
     { 
       id: 'graphics', 
       title: 'Graphics Design', 
-      image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=800',
-      desc: 'Master visual communication and modern design tools in a creative workspace.' 
+      image: 'https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?q=80&w=800',
+      desc: 'Master visual communication and modern design tools in a professional workstation setup.' 
     },
     { 
       id: 'video', 
       title: 'Video Editing', 
-      image: 'https://images.unsplash.com/photo-1574717024453-354056afd6ec?q=80&w=800',
-      desc: 'Cinematic storytelling and professional post-production techniques.' 
+      image: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=800',
+      desc: 'Cinematic storytelling and professional color grading with modern post-production software.' 
     },
     { 
       id: 'gele', 
       title: 'Auto-Gele & Style', 
-      image: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=800',
-      desc: 'Artistry in traditional headwraps and modern Nigerian fashion.' 
+      image: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?q=80&w=800',
+      desc: 'Learn the artistry of intricate Nigerian gele headwraps and traditional fashion styling.' 
     },
     { 
       id: 'soap', 
       title: 'Liquid Soap Making', 
       image: 'https://images.unsplash.com/photo-1605264964528-06403738d6dc?q=80&w=800',
-      desc: 'Formulation and branding of eco-friendly, natural liquid products.' 
+      desc: 'Formulate eco-friendly, plant-based dish soaps and natural fragrance products.' 
     },
     { 
       id: 'pastries', 
       title: 'Pastries Production', 
-      image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=800',
-      desc: 'Gourmet baking and professional catering for aspiring chefs.' 
+      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=800',
+      desc: 'Professional gourmet baking and catering skills for aspiring culinary experts.' 
     },
   ];
 
