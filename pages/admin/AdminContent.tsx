@@ -12,6 +12,7 @@ const AdminContent: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [bucketStatus, setBucketStatus] = useState<'checking' | 'ok' | 'missing'>('checking');
+  const [editId, setEditId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
@@ -61,16 +62,25 @@ const AdminContent: React.FC = () => {
     checkBucket();
   }, [activeTab]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleEdit = (item: any) => {
+    setEditId(item.id);
+    setFormData({
+      title: item.title || '',
+      category: item.category || 'Skill Acquisition',
+      type: item.type || 'Job',
+      description: item.description || '',
+      duration: item.duration || '3 Months',
+      date: item.date || '',
+      location: item.location || '',
+      organization: item.organization || '',
+      deadline: item.deadline || '',
+      link: item.link || '',
+      image: item.image || ''
+    });
+    setUploadPreview(item.image || null);
+    setSelectedFile(null);
+    setSaveError(null);
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -84,6 +94,18 @@ const AdminContent: React.FC = () => {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -92,45 +114,54 @@ const AdminContent: React.FC = () => {
     try {
       let imageUrl = formData.image;
 
-      // 1. Upload file if selected
+      // 1. Upload file if a NEW file is selected
       if (selectedFile) {
         try {
           imageUrl = await contentService.uploadImage(selectedFile);
         } catch (uploadErr: any) {
-          throw new Error(`Bucket not found. Ensure 'content' bucket exists in Supabase Storage.`);
+          throw new Error(uploadErr.message || "Bucket 'content' not found. Please create it in Supabase Storage.");
         }
       }
 
-      if (!imageUrl) throw new Error("Please upload an image or provide a URL.");
+      if (!imageUrl && (activeTab === 'programs' || activeTab === 'events')) {
+        throw new Error("Please upload an image or provide a URL.");
+      }
 
-      // 2. Save Data
+      // 2. Save Data (Update or Create)
       if (activeTab === 'programs') {
-        await contentService.createProgram({
+        const payload = {
           title: formData.title,
           category: formData.category,
           description: formData.description,
           duration: formData.duration,
           image: imageUrl
-        });
+        };
+        if (editId) await contentService.updateProgram(editId, payload);
+        else await contentService.createProgram(payload);
       } else if (activeTab === 'events') {
-        await contentService.createEvent({
+        const payload = {
           title: formData.title,
           date: formData.date,
           location: formData.location,
           description: formData.description,
           image: imageUrl
-        });
+        };
+        if (editId) await contentService.updateEvent(editId, payload);
+        else await contentService.createEvent(payload);
       } else {
-        await contentService.createOpportunity({
+        const payload = {
           type: formData.type,
           title: formData.title,
           organization: formData.organization,
           deadline: formData.deadline,
           link: formData.link
-        });
+        };
+        if (editId) await contentService.updateOpportunity(editId, payload);
+        else await contentService.createOpportunity(payload);
       }
 
       setIsModalOpen(false);
+      setEditId(null);
       loadContent();
       
       // Reset form
@@ -171,9 +202,15 @@ const AdminContent: React.FC = () => {
           </button>
           <button 
             onClick={() => {
+              setEditId(null);
               setSaveError(null);
               setSelectedFile(null);
               setUploadPreview(null);
+              setFormData({
+                title: '', category: 'Skill Acquisition', type: 'Job', description: '', duration: '3 Months',
+                date: '', location: '', organization: '', deadline: '', link: '',
+                image: ''
+              });
               setIsModalOpen(true);
               checkBucket();
             }}
@@ -238,6 +275,7 @@ const AdminContent: React.FC = () => {
                       </td>
                       <td className="p-4 text-right">
                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => handleEdit(item)} className="p-2 text-slate-400 hover:text-yawai-blue transition-colors"><Edit3 size={16} /></button>
                             <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
                          </div>
                       </td>
@@ -253,19 +291,29 @@ const AdminContent: React.FC = () => {
          )}
       </div>
 
-      {/* CREATE MODAL */}
+      {/* CREATE/EDIT MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white w-full max-w-xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up">
              <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <div>
-                   <h3 className="text-2xl font-black text-slate-900 capitalize">Create {activeTab.slice(0, -1)}</h3>
-                   <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">Direct to Live Mobile App</p>
+                   <h3 className="text-2xl font-black text-slate-900 capitalize">{editId ? 'Edit' : 'Create'} {activeTab.slice(0, -1)}</h3>
+                   <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">Changes are synced immediately to mobile app</p>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="p-3 hover:bg-slate-200 rounded-full transition-colors"><X size={24} /></button>
+                <button onClick={() => { setIsModalOpen(false); setEditId(null); }} className="p-3 hover:bg-slate-200 rounded-full transition-colors"><X size={24} /></button>
              </div>
              
              <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto no-scrollbar">
+                {bucketStatus === 'missing' && (
+                  <div className="bg-red-50 p-5 rounded-2xl border border-red-100 flex gap-4 text-red-800">
+                    <HardDrive size={24} className="shrink-0" />
+                    <div className="space-y-1">
+                       <p className="text-sm font-black uppercase">Storage Bucket Missing</p>
+                       <p className="text-xs leading-relaxed">Please create a <strong>public</strong> bucket named <strong>'content'</strong> in your Supabase Storage dashboard. Uploads will fail until this is fixed.</p>
+                    </div>
+                  </div>
+                )}
+
                 {activeTab === 'programs' && (
                   <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3 text-amber-800 text-xs">
                     <Info size={18} className="shrink-0" />
@@ -356,7 +404,7 @@ const AdminContent: React.FC = () => {
                           <div className="relative w-full h-40 rounded-2xl overflow-hidden shadow-md">
                             <img src={uploadPreview} className="w-full h-full object-cover" alt="Preview" />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                              <p className="text-white text-xs font-bold">Change image</p>
+                              <p className="text-white text-xs font-bold">Click to Change</p>
                             </div>
                           </div>
                         ) : (
@@ -380,7 +428,7 @@ const AdminContent: React.FC = () => {
                   className="w-full bg-slate-900 text-white font-bold py-5 rounded-[1.5rem] hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95"
                 >
                   {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
-                  <span className="text-lg">{isSaving ? 'Publishing...' : 'Publish Content'}</span>
+                  <span className="text-lg">{isSaving ? 'Processing...' : editId ? 'Update Content' : 'Publish Content'}</span>
                 </button>
              </form>
           </div>

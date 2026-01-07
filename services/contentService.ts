@@ -21,6 +21,9 @@ export const contentService = {
       .upload(filePath, file);
 
     if (uploadError) {
+      if (uploadError.message.includes('bucket not found')) {
+        throw new Error("Storage bucket 'content' not found. Please create it in your Supabase dashboard.");
+      }
       throw uploadError;
     }
 
@@ -89,6 +92,17 @@ export const contentService = {
     return data;
   },
 
+  async updateProgram(id: string, updates: Partial<Program>) {
+    const { data, error } = await supabase
+      .from('programs')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   // Events
   async fetchEvents(): Promise<Event[]> {
     try {
@@ -118,6 +132,17 @@ export const contentService = {
     return data;
   },
 
+  async updateEvent(id: string, updates: Partial<Event>) {
+    const { data, error } = await supabase
+      .from('events')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   // Opportunities
   async fetchOpportunities(): Promise<Opportunity[]> {
     try {
@@ -141,6 +166,17 @@ export const contentService = {
     const { data, error } = await supabase
       .from('opportunities')
       .insert([opp])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateOpportunity(id: string, updates: Partial<Opportunity>) {
+    const { data, error } = await supabase
+      .from('opportunities')
+      .update(updates)
+      .eq('id', id)
       .select()
       .single();
     if (error) throw error;

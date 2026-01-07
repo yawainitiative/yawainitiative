@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Users, Heart, Calendar, ArrowUpRight, Globe, AlertCircle, RefreshCw, Share2, HardDrive, CheckCircle2, XCircle } from 'lucide-react';
+import { Users, Heart, Calendar, ArrowUpRight, Globe, AlertCircle, RefreshCw, Share2, HardDrive, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
 
@@ -53,7 +53,7 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pb-20">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Dashboard Overview</h2>
@@ -67,6 +67,44 @@ const AdminDashboard: React.FC = () => {
           <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
+
+      {/* STORAGE WARNING OVERLAY (IF MISSING) */}
+      {storageStatus === 'missing' && (
+        <div className="bg-red-600 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden animate-slide-up">
+           <div className="absolute right-0 top-0 p-12 opacity-10 pointer-events-none">
+              <HardDrive size={160} />
+           </div>
+           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center shrink-0 border-2 border-white/20">
+                 <AlertCircle size={40} className="text-white" />
+              </div>
+              <div className="flex-1 space-y-2 text-center md:text-left">
+                 <h3 className="text-2xl font-black">Critical Setup Required!</h3>
+                 <p className="text-red-100 font-medium leading-relaxed">
+                    Image uploads are currently disabled because the <strong>'content'</strong> storage bucket is missing from your Supabase project.
+                 </p>
+                 <div className="flex flex-wrap gap-3 mt-6 justify-center md:justify-start">
+                    <a 
+                      href="https://supabase.com/dashboard/project/txzxsomapiouqaknvrqq/storage" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="bg-white text-red-600 px-6 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg hover:bg-slate-100 transition-all"
+                    >
+                       Open Supabase Storage <ExternalLink size={16} />
+                    </a>
+                 </div>
+              </div>
+              <div className="bg-red-900/40 p-6 rounded-2xl border border-white/10 shrink-0">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-red-200 mb-3">Steps to fix:</p>
+                 <ul className="space-y-2 text-xs font-bold text-white">
+                    <li className="flex gap-2"><span>1.</span> Create bucket named 'content'</li>
+                    <li className="flex gap-2"><span>2.</span> Set bucket to 'Public'</li>
+                    <li className="flex gap-2"><span>3.</span> Click refresh on this dashboard</li>
+                 </ul>
+              </div>
+           </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -88,28 +126,7 @@ const AdminDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          {/* Storage Alert if missing */}
-          {storageStatus === 'missing' && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-600 shrink-0">
-                <HardDrive size={32} />
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-red-900 font-bold text-lg">Storage Bucket Missing</h3>
-                <p className="text-red-700 text-sm mt-1">
-                  You cannot upload images because the <strong>'content'</strong> bucket hasn't been created in Supabase Storage.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
-                   <div className="bg-white/50 px-3 py-1 rounded text-[10px] font-bold text-red-800 uppercase">1. Go to Supabase</div>
-                   <div className="bg-white/50 px-3 py-1 rounded text-[10px] font-bold text-red-800 uppercase">2. Storage &rarr; New Bucket</div>
-                   <div className="bg-white/50 px-3 py-1 rounded text-[10px] font-bold text-red-800 uppercase">3. Name it 'content'</div>
-                   <div className="bg-white/50 px-3 py-1 rounded text-[10px] font-bold text-red-800 uppercase">4. Set to Public</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[300px]">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[350px]">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="font-bold text-slate-800">System Activity</h3>
               <button className="text-sm text-blue-600 font-bold hover:underline">View All</button>
@@ -118,8 +135,8 @@ const AdminDashboard: React.FC = () => {
                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
                   <Users size={32} />
                </div>
-               <h4 className="font-bold text-slate-800">Operational</h4>
-               <p className="text-sm text-slate-400 max-w-xs mt-1">When new content is published or users register, logs will appear here.</p>
+               <h4 className="font-bold text-slate-800 text-lg">Platform is Operational</h4>
+               <p className="text-sm text-slate-400 max-w-xs mt-1 font-medium">Logs and activity tracking will appear here as users engage with the mobile app.</p>
             </div>
           </div>
         </div>
@@ -160,9 +177,9 @@ const AdminDashboard: React.FC = () => {
                 )}
              </div>
 
-             <div className="p-4 bg-slate-50 rounded-xl mt-4">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Project ID</p>
-                <p className="text-xs font-mono text-slate-600 break-all">txzxsomapiouqaknvrqq</p>
+             <div className="p-4 bg-slate-50 rounded-xl mt-4 border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Project ID</p>
+                <p className="text-xs font-mono text-slate-600 break-all font-bold">txzxsomapiouqaknvrqq</p>
              </div>
           </div>
         </div>
