@@ -26,32 +26,32 @@ const ProgramRegistration: React.FC = () => {
     { 
       id: 'graphics', 
       title: 'Graphics Design', 
-      image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=800',
-      desc: 'Master visual communication and modern design tools.' 
+      image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=800',
+      desc: 'Master visual communication and modern design tools in a creative workspace.' 
     },
     { 
       id: 'video', 
       title: 'Video Editing', 
       image: 'https://images.unsplash.com/photo-1574717024453-354056afd6ec?q=80&w=800',
-      desc: 'Professional cinematic storytelling and post-production.' 
+      desc: 'Cinematic storytelling and professional post-production techniques.' 
     },
     { 
       id: 'gele', 
       title: 'Auto-Gele & Style', 
-      image: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?q=80&w=800',
-      desc: 'Artistry in traditional headwraps and modern fashion.' 
+      image: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=800',
+      desc: 'Artistry in traditional headwraps and modern Nigerian fashion.' 
     },
     { 
       id: 'soap', 
       title: 'Liquid Soap Making', 
-      image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800',
-      desc: 'Eco-friendly formulation and product branding.' 
+      image: 'https://images.unsplash.com/photo-1605264964528-06403738d6dc?q=80&w=800',
+      desc: 'Formulation and branding of eco-friendly, natural liquid products.' 
     },
     { 
       id: 'pastries', 
       title: 'Pastries Production', 
       image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=800',
-      desc: 'Gourmet baking and professional catering skills.' 
+      desc: 'Gourmet baking and professional catering for aspiring chefs.' 
     },
   ];
 
@@ -259,7 +259,7 @@ const ProgramRegistration: React.FC = () => {
                     <input 
                       type="email" 
                       required
-                      placeholder="johndoe@example.com"
+                      placeholder="johndoe@email.com"
                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:border-yawai-gold outline-none transition-all font-medium"
                       value={formData.email}
                       onChange={e => setFormData({...formData, email: e.target.value})}
