@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { 
-  Palette, Video, Sparkles, FlaskConical, Cake, 
   Calendar, CheckCircle, ArrowLeft, Loader2, Send, 
   Target, Rocket, Users, Info
 } from 'lucide-react';
@@ -27,45 +26,30 @@ const ProgramRegistration: React.FC = () => {
     { 
       id: 'graphics', 
       title: 'Graphics Design', 
-      icon: Palette, 
-      color: 'text-purple-600', 
-      bg: 'bg-purple-50', 
-      image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=800',
+      image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=800',
       desc: 'Master visual communication and modern tools.' 
     },
     { 
       id: 'video', 
       title: 'Video Editing', 
-      icon: Video, 
-      color: 'text-blue-600', 
-      bg: 'bg-blue-50', 
-      image: 'https://images.unsplash.com/photo-1574717024453-354056afd6ec?q=80&w=800',
+      image: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800',
       desc: 'Cinematic storytelling and professional editing.' 
     },
     { 
       id: 'gele', 
       title: 'Auto-Gele & Style', 
-      icon: Sparkles, 
-      color: 'text-rose-600', 
-      bg: 'bg-rose-50', 
-      image: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=800',
+      image: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?q=80&w=800',
       desc: 'Crafting trendy pre-tied headwraps and fashion.' 
     },
     { 
       id: 'soap', 
       title: 'Liquid Soap Making', 
-      icon: FlaskConical, 
-      color: 'text-teal-600', 
-      bg: 'bg-teal-50', 
-      image: 'https://images.unsplash.com/photo-1605264964528-06403738d6dc?q=80&w=800',
+      image: 'https://images.unsplash.com/photo-1600857062241-98e5dba7f214?q=80&w=800',
       desc: 'Chemical formulation and branding products.' 
     },
     { 
       id: 'pastries', 
       title: 'Pastries Production', 
-      icon: Cake, 
-      color: 'text-orange-600', 
-      bg: 'bg-orange-50', 
       image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=800',
       desc: 'Baking and catering for aspiring chefs.' 
     },
@@ -121,7 +105,7 @@ const ProgramRegistration: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-20">
+    <div className="min-h-screen bg-white pb-20 font-sans">
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 px-6 h-20 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
@@ -200,20 +184,23 @@ const ProgramRegistration: React.FC = () => {
                   }
                 `}
               >
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative h-56 overflow-hidden">
                    <img src={track.image} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" alt={track.title} />
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                   <div className={`absolute top-4 left-4 w-12 h-12 ${track.bg} ${track.color} rounded-xl flex items-center justify-center shadow-lg backdrop-blur-md`}>
-                      <track.icon size={24} />
-                   </div>
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                   
+                   {/* Selection Feedback Overlay */}
                    {formData.selectedSkill === track.title && (
-                     <div className="absolute bottom-4 right-4 bg-yawai-gold text-yawai-blue p-1.5 rounded-full">
+                     <div className="absolute top-4 right-4 bg-yawai-gold text-yawai-blue p-1.5 rounded-full shadow-lg border-2 border-white animate-bounce">
                        <CheckCircle size={20} />
                      </div>
                    )}
+
+                   <div className="absolute bottom-6 left-6 right-6">
+                      <h3 className="font-black text-xl text-white mb-1 leading-tight">{track.title}</h3>
+                      <p className="text-white/70 text-xs font-bold uppercase tracking-widest">3 Month Intensive</p>
+                   </div>
                 </div>
-                <div className="p-6 pb-8">
-                  <h3 className="font-black text-lg text-slate-900 mb-2 leading-tight group-hover:text-yawai-blue transition-colors">{track.title}</h3>
+                <div className="p-6">
                   <p className="text-slate-500 text-sm leading-relaxed font-medium">{track.desc}</p>
                 </div>
               </button>
@@ -294,8 +281,8 @@ const ProgramRegistration: React.FC = () => {
                   </div>
                   <div className="space-y-1.5 opacity-50 pointer-events-none">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cohort</label>
-                    <div className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 font-black text-slate-400">
-                      JANUARY 2026
+                    <div className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 font-black text-slate-400 uppercase">
+                      January 2026 Batch
                     </div>
                   </div>
                 </div>
