@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit3, Trash2, Calendar, Briefcase, BookOpen, Filter, X, Loader2, Image as ImageIcon, Save, RefreshCw, AlertCircle, Upload, HardDrive, Info } from 'lucide-react';
+import { Plus, Edit3, Trash2, Calendar, Briefcase, BookOpen, Filter, X, Loader2, Image as ImageIcon, Save, RefreshCw, AlertCircle, Upload, HardDrive, Info, CheckCircle } from 'lucide-react';
 import { contentService } from '../../services/contentService';
 import { supabase } from '../../services/supabase';
 
@@ -11,7 +11,7 @@ const AdminContent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [bucketStatus, setBucketStatus] = useState<'checking' | 'ok' | 'missing'>('checking');
+  const [bucketStatus, setBucketStatus] = useState<'checking' | 'ok' | 'missing' | 'restricted'>('checking');
   const [editId, setEditId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,11 +34,11 @@ const AdminContent: React.FC = () => {
 
   const checkBucket = async () => {
     try {
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const exists = buckets?.some(b => b.name === 'content');
-      setBucketStatus(exists ? 'ok' : 'missing');
+      const { data: buckets, error } = await supabase.storage.listBuckets();
+      if (error) setBucketStatus('restricted');
+      else setBucketStatus(buckets?.some(b => b.name === 'content') ? 'ok' : 'missing');
     } catch (e) {
-      setBucketStatus('missing');
+      setBucketStatus('restricted');
     }
   };
 
@@ -84,12 +84,12 @@ const AdminContent: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure? This will remove the item from the user app immediately.")) {
+    if (window.confirm("Delete this item?")) {
       try {
         await contentService.deleteItem(activeTab, id);
         setItems(items.filter(item => item.id !== id));
       } catch (err: any) {
-        alert("Failed to delete item.");
+        alert("Delete failed.");
       }
     }
   };
@@ -99,9 +99,7 @@ const AdminContent: React.FC = () => {
     if (file) {
       setSelectedFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadPreview(reader.result as string);
-      };
+      reader.onloadend = () => setUploadPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -113,49 +111,20 @@ const AdminContent: React.FC = () => {
     
     try {
       let imageUrl = formData.image;
-
-      // 1. Upload file if a NEW file is selected
       if (selectedFile) {
-        try {
-          imageUrl = await contentService.uploadImage(selectedFile);
-        } catch (uploadErr: any) {
-          throw new Error(uploadErr.message || "Bucket 'content' not found. Please create it in Supabase Storage.");
-        }
+        imageUrl = await contentService.uploadImage(selectedFile);
       }
 
-      if (!imageUrl && (activeTab === 'programs' || activeTab === 'events')) {
-        throw new Error("Please upload an image or provide a URL.");
-      }
-
-      // 2. Save Data (Update or Create)
       if (activeTab === 'programs') {
-        const payload = {
-          title: formData.title,
-          category: formData.category,
-          description: formData.description,
-          duration: formData.duration,
-          image: imageUrl
-        };
+        const payload = { title: formData.title, category: formData.category, description: formData.description, duration: formData.duration, image: imageUrl };
         if (editId) await contentService.updateProgram(editId, payload);
         else await contentService.createProgram(payload);
       } else if (activeTab === 'events') {
-        const payload = {
-          title: formData.title,
-          date: formData.date,
-          location: formData.location,
-          description: formData.description,
-          image: imageUrl
-        };
+        const payload = { title: formData.title, date: formData.date, location: formData.location, description: formData.description, image: imageUrl };
         if (editId) await contentService.updateEvent(editId, payload);
         else await contentService.createEvent(payload);
       } else {
-        const payload = {
-          type: formData.type,
-          title: formData.title,
-          organization: formData.organization,
-          deadline: formData.deadline,
-          link: formData.link
-        };
+        const payload = { type: formData.type, title: formData.title, organization: formData.organization, deadline: formData.deadline, link: formData.link };
         if (editId) await contentService.updateOpportunity(editId, payload);
         else await contentService.createOpportunity(payload);
       }
@@ -163,18 +132,8 @@ const AdminContent: React.FC = () => {
       setIsModalOpen(false);
       setEditId(null);
       loadContent();
-      
-      // Reset form
-      setFormData({
-        title: '', category: 'Skill Acquisition', type: 'Job', description: '', duration: '3 Months',
-        date: '', location: '', organization: '', deadline: '', link: '',
-        image: ''
-      });
-      setSelectedFile(null);
-      setUploadPreview(null);
     } catch (err: any) {
-      console.error(err);
-      setSaveError(err.message || 'Check database connection');
+      setSaveError(err.message || 'Error saving data.');
     } finally {
       setIsSaving(false);
     }
@@ -191,33 +150,18 @@ const AdminContent: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Content Management</h2>
-          <p className="text-sm text-slate-500">Tag Programs as 'Skill Acquisition' to drive the registration page.</p>
+          <p className="text-sm text-slate-500">Manage what users see in the YAWAI mobile app.</p>
         </div>
         <div className="flex gap-2">
-          <button 
-            onClick={loadContent}
-            className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-yawai-blue transition-colors"
-          >
+          <button onClick={loadContent} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-yawai-blue transition-colors">
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
           <button 
-            onClick={() => {
-              setEditId(null);
-              setSaveError(null);
-              setSelectedFile(null);
-              setUploadPreview(null);
-              setFormData({
-                title: '', category: 'Skill Acquisition', type: 'Job', description: '', duration: '3 Months',
-                date: '', location: '', organization: '', deadline: '', link: '',
-                image: ''
-              });
-              setIsModalOpen(true);
-              checkBucket();
-            }}
+            onClick={() => { setEditId(null); setIsModalOpen(true); setFormData({...formData, title: '', description: '', image: ''}); setUploadPreview(null); }}
             className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg active:scale-95"
           >
             <Plus size={18} />
-            <span className="capitalize">Create {activeTab.slice(0, -1)}</span>
+            <span className="capitalize">New {activeTab.slice(0, -1)}</span>
           </button>
         </div>
       </div>
@@ -228,14 +172,10 @@ const AdminContent: React.FC = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             className={`px-6 py-4 font-bold text-sm flex items-center gap-2 border-b-2 transition-all whitespace-nowrap
-              ${activeTab === tab.id 
-                ? 'border-red-600 text-red-600 bg-red-50/30' 
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-              }
+              ${activeTab === tab.id ? 'border-red-600 text-red-600 bg-red-50/30' : 'border-transparent text-slate-500 hover:text-slate-800'}
             `}
           >
-            <tab.icon size={16} />
-            {tab.label}
+            <tab.icon size={16} /> {tab.label}
           </button>
         ))}
       </div>
@@ -244,100 +184,89 @@ const AdminContent: React.FC = () => {
          {loading ? (
            <div className="flex flex-col items-center justify-center h-[400px] text-slate-400">
               <Loader2 className="animate-spin mb-4" size={32} />
-              <p className="font-medium">Checking database...</p>
+              <p className="font-medium">Loading items...</p>
            </div>
          ) : items.length > 0 ? (
            <table className="w-full text-left border-collapse">
               <thead>
-                 <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Title</th>
-                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category / Info</th>
-                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                 <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <th className="p-4 pl-6">Title</th>
+                    <th className="p-4">Status / Category</th>
+                    <th className="p-4 text-right pr-6">Actions</th>
                  </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                 {items.map(item => (
-                   <tr key={item.id} className="hover:bg-slate-50 group transition-colors">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                           {item.image ? (
-                             <img src={item.image} className="w-10 h-10 rounded-lg object-cover bg-slate-100" alt="" />
-                           ) : (
-                             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300"><ImageIcon size={16} /></div>
-                           )}
-                           <span className="font-bold text-slate-800">{item.title}</span>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                         <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${item.category === 'Skill Acquisition' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                           {activeTab === 'programs' ? item.category : activeTab === 'events' ? item.date : item.organization}
-                         </span>
-                      </td>
-                      <td className="p-4 text-right">
-                         <div className="flex items-center justify-end gap-2">
-                            <button onClick={() => handleEdit(item)} className="p-2 text-slate-400 hover:text-yawai-blue transition-colors"><Edit3 size={16} /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
-                         </div>
-                      </td>
-                   </tr>
-                 ))}
+              <tbody className="divide-y divide-slate-100 font-medium">
+                 {items.map(item => {
+                   const isSkillTrack = item.category?.toLowerCase().includes('skill') || item.category?.toLowerCase().includes('acquisition');
+                   return (
+                     <tr key={item.id} className="hover:bg-slate-50 group transition-colors">
+                        <td className="p-4 pl-6">
+                          <div className="flex items-center gap-3">
+                             {item.image ? (
+                               <img src={item.image} className="w-10 h-10 rounded-lg object-cover bg-slate-100" alt="" />
+                             ) : (
+                               <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300"><ImageIcon size={16} /></div>
+                             )}
+                             <span className="font-bold text-slate-800">{item.title}</span>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                           <div className="flex items-center gap-2">
+                             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${isSkillTrack ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                               {activeTab === 'programs' ? item.category : activeTab === 'events' ? item.date : item.organization}
+                             </span>
+                             {activeTab === 'programs' && isSkillTrack && (
+                               <div className="flex items-center gap-1 text-[9px] font-black text-green-600 uppercase bg-green-50 px-2 py-1 rounded-full border border-green-100">
+                                 <CheckCircle size={10} /> Shown on Reg. Page
+                               </div>
+                             )}
+                           </div>
+                        </td>
+                        <td className="p-4 text-right pr-6">
+                           <div className="flex items-center justify-end gap-2">
+                              <button onClick={() => handleEdit(item)} className="p-2 text-slate-400 hover:text-yawai-blue transition-colors"><Edit3 size={16} /></button>
+                              <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                           </div>
+                        </td>
+                     </tr>
+                   );
+                 })}
               </tbody>
            </table>
          ) : (
            <div className="p-20 text-center text-slate-400">
              <Filter size={48} className="mx-auto mb-4 opacity-20" />
-             <p className="font-bold">No {activeTab} found in DB</p>
+             <p className="font-bold">No items found</p>
            </div>
          )}
       </div>
 
-      {/* CREATE/EDIT MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white w-full max-w-xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up">
-             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <div>
-                   <h3 className="text-2xl font-black text-slate-900 capitalize">{editId ? 'Edit' : 'Create'} {activeTab.slice(0, -1)}</h3>
-                   <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">Changes are synced immediately to mobile app</p>
-                </div>
-                <button onClick={() => { setIsModalOpen(false); setEditId(null); }} className="p-3 hover:bg-slate-200 rounded-full transition-colors"><X size={24} /></button>
+             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+                <h3 className="text-2xl font-black text-slate-900">{editId ? 'Edit' : 'Create'} {activeTab.slice(0, -1)}</h3>
+                <button onClick={() => setIsModalOpen(false)} className="p-3 hover:bg-slate-200 rounded-full transition-colors"><X size={24} /></button>
              </div>
              
              <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto no-scrollbar">
                 {bucketStatus === 'missing' && (
                   <div className="bg-red-50 p-5 rounded-2xl border border-red-100 flex gap-4 text-red-800">
-                    <HardDrive size={24} className="shrink-0" />
-                    <div className="space-y-1">
-                       <p className="text-sm font-black uppercase">Storage Bucket Missing</p>
-                       <p className="text-xs leading-relaxed">Please create a <strong>public</strong> bucket named <strong>'content'</strong> in your Supabase Storage dashboard. Uploads will fail until this is fixed.</p>
-                    </div>
+                    <AlertCircle size={24} className="shrink-0" />
+                    <p className="text-xs leading-relaxed font-bold uppercase">Storage bucket 'content' is missing. Please create it as a Public bucket in your Supabase dashboard.</p>
                   </div>
                 )}
 
                 {activeTab === 'programs' && (
-                  <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3 text-amber-800 text-xs">
+                  <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3 text-amber-800 text-xs font-bold">
                     <Info size={18} className="shrink-0" />
-                    <p>To show a skill card (like Video Editing) on the registration page, set Category to <strong>'Skill Acquisition'</strong>.</p>
-                  </div>
-                )}
-
-                {saveError && (
-                  <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 text-red-600 text-sm font-medium">
-                    <AlertCircle size={18} className="mt-0.5 shrink-0" />
-                    <p>{saveError}</p>
+                    <p>To show this as a skill card on the registration page, ensure category is set to 'Skill Acquisition'.</p>
                   </div>
                 )}
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Title</label>
-                  <input 
-                    required 
-                    value={formData.title} 
-                    onChange={e => setFormData({...formData, title: e.target.value})} 
-                    type="text" 
-                    className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50" 
-                    placeholder={activeTab === 'programs' ? "e.g. Video Editing & Motion Graphics" : "Enter title..."} 
-                  />
+                  <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} type="text" className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50" />
                 </div>
 
                 {activeTab === 'programs' && (
@@ -354,20 +283,7 @@ const AdminContent: React.FC = () => {
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration</label>
-                      <input value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} type="text" className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50" placeholder="e.g. 3 Months" />
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'events' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Date</label>
-                      <input value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} type="text" className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50" placeholder="e.g. Jan 15, 2026" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Location</label>
-                      <input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} type="text" className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50" placeholder="e.g. Lagos, Nigeria" />
+                      <input value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} type="text" className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50" placeholder="3 Months" />
                     </div>
                   </div>
                 )}
@@ -375,60 +291,30 @@ const AdminContent: React.FC = () => {
                 {(activeTab === 'programs' || activeTab === 'events') && (
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Description</label>
-                    <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50 resize-none" placeholder="Provide full details..." />
+                    <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50 resize-none" />
                   </div>
                 )}
 
                 {(activeTab === 'programs' || activeTab === 'events') && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-4">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Display Image</label>
-                    
-                    <div className="flex flex-col gap-4">
-                      {/* Upload Box */}
-                      <div 
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`
-                          group border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all
-                          ${uploadPreview ? 'border-green-400 bg-green-50/20' : 'border-slate-200 hover:border-red-400 bg-slate-50/50'}
-                        `}
-                      >
-                        <input 
-                          type="file" 
-                          ref={fileInputRef} 
-                          onChange={handleFileChange} 
-                          className="hidden" 
-                          accept="image/*" 
-                        />
-                        
-                        {uploadPreview ? (
-                          <div className="relative w-full h-40 rounded-2xl overflow-hidden shadow-md">
-                            <img src={uploadPreview} className="w-full h-full object-cover" alt="Preview" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                              <p className="text-white text-xs font-bold">Click to Change</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-red-500 transition-colors">
-                              <Upload size={24} />
-                            </div>
-                            <div className="text-center">
-                              <p className="text-sm font-bold text-slate-700">Choose File</p>
-                            </div>
-                          </>
-                        )}
-                      </div>
+                    <div onClick={() => fileInputRef.current?.click()} className={`group border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${uploadPreview ? 'border-green-400 bg-green-50/20' : 'border-slate-200 hover:border-red-400 bg-slate-50/50'}`}>
+                      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                      {uploadPreview ? (
+                        <img src={uploadPreview} className="w-full max-h-40 object-cover rounded-xl shadow-md" alt="" />
+                      ) : (
+                        <div className="text-center">
+                          <Upload size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-red-500" />
+                          <p className="text-xs font-bold text-slate-500">Upload Image</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                <button 
-                  type="submit"
-                  disabled={isSaving}
-                  className="w-full bg-slate-900 text-white font-bold py-5 rounded-[1.5rem] hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95"
-                >
+                <button disabled={isSaving} type="submit" className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-bold shadow-xl flex items-center justify-center gap-3 disabled:opacity-50">
                   {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
-                  <span className="text-lg">{isSaving ? 'Processing...' : editId ? 'Update Content' : 'Publish Content'}</span>
+                  <span>{isSaving ? 'Processing...' : editId ? 'Update' : 'Publish'}</span>
                 </button>
              </form>
           </div>
