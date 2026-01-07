@@ -18,7 +18,7 @@ const AdminContent: React.FC = () => {
   // Form State
   const [formData, setFormData] = useState<any>({
     title: '',
-    category: 'Skill Acquisition',
+    category: 'Skill Track',
     type: 'Job',
     description: '',
     duration: '3 Months',
@@ -66,7 +66,7 @@ const AdminContent: React.FC = () => {
     setEditId(item.id);
     setFormData({
       title: item.title || '',
-      category: item.category || 'Skill Acquisition',
+      category: item.category || 'Skill Track',
       type: item.type || 'Job',
       description: item.description || '',
       duration: item.duration || '3 Months',
@@ -157,7 +157,7 @@ const AdminContent: React.FC = () => {
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
           <button 
-            onClick={() => { setEditId(null); setIsModalOpen(true); setFormData({...formData, title: '', description: '', image: ''}); setUploadPreview(null); }}
+            onClick={() => { setEditId(null); setIsModalOpen(true); setFormData({...formData, title: '', description: '', image: '', category: 'Skill Track'}); setUploadPreview(null); }}
             className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg active:scale-95"
           >
             <Plus size={18} />
@@ -197,7 +197,9 @@ const AdminContent: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                  {items.map(item => {
-                   const isSkillTrack = item.category?.toLowerCase().includes('skill') || item.category?.toLowerCase().includes('acquisition');
+                   const catLower = (item.category || '').toLowerCase();
+                   const isSkillRelated = catLower.includes('skill') || catLower.includes('acquisition') || catLower.includes('track');
+                   
                    return (
                      <tr key={item.id} className="hover:bg-slate-50 group transition-colors">
                         <td className="p-4 pl-6">
@@ -212,12 +214,12 @@ const AdminContent: React.FC = () => {
                         </td>
                         <td className="p-4">
                            <div className="flex items-center gap-2">
-                             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${isSkillTrack ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${isSkillRelated ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
                                {activeTab === 'programs' ? item.category : activeTab === 'events' ? item.date : item.organization}
                              </span>
-                             {activeTab === 'programs' && isSkillTrack && (
+                             {activeTab === 'programs' && isSkillRelated && (
                                <div className="flex items-center gap-1 text-[9px] font-black text-green-600 uppercase bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                                 <CheckCircle size={10} /> Shown on Reg. Page
+                                 <CheckCircle size={10} /> Live on Registration
                                </div>
                              )}
                            </div>
@@ -260,7 +262,7 @@ const AdminContent: React.FC = () => {
                 {activeTab === 'programs' && (
                   <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3 text-amber-800 text-xs font-bold">
                     <Info size={18} className="shrink-0" />
-                    <p>To show this as a skill card on the registration page, ensure category is set to 'Skill Acquisition'.</p>
+                    <p>To show this as a skill track in the grid on the registration page, set Category to 'Skill Track'. Set to 'Skill Acquisition' for the main header.</p>
                   </div>
                 )}
 
@@ -274,11 +276,11 @@ const AdminContent: React.FC = () => {
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Category</label>
                       <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full border border-slate-200 rounded-2xl px-5 py-4 focus:border-red-500 outline-none shadow-inner bg-slate-50/50 appearance-none font-bold">
-                        <option>Skill Acquisition</option>
-                        <option>Digital Skills</option>
-                        <option>Business</option>
-                        <option>Leadership</option>
-                        <option>Empowerment</option>
+                        <option value="Skill Track">Skill Track (Inner Skill)</option>
+                        <option value="Skill Acquisition">Skill Acquisition (Main Header)</option>
+                        <option value="Digital Skills">Digital Skills</option>
+                        <option value="Business">Business</option>
+                        <option value="Leadership">Leadership</option>
                       </select>
                     </div>
                     <div className="space-y-1.5">
@@ -299,7 +301,7 @@ const AdminContent: React.FC = () => {
                   <div className="space-y-4">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Display Image</label>
                     <div onClick={() => fileInputRef.current?.click()} className={`group border-2 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${uploadPreview ? 'border-green-400 bg-green-50/20' : 'border-slate-200 hover:border-red-400 bg-slate-50/50'}`}>
-                      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                      <input type="file" fileInputRef={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
                       {uploadPreview ? (
                         <img src={uploadPreview} className="w-full max-h-40 object-cover rounded-xl shadow-md" alt="" />
                       ) : (
