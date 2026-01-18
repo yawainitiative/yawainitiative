@@ -15,17 +15,21 @@ const AdminDashboard: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   const tablesToCheck = [
-    'profiles', 
     'programs', 
     'events', 
     'opportunities', 
     'social_posts', 
     'gallery_images',
     'program_applications',
+    'event_rsvps',
+    'volunteer_applications',
     'app_settings'
   ];
 
-  const fullSqlSchema = `-- 1. CREATE TABLES
+  const fullSqlSchema = `-- YAWAI COMPLETE SYSTEM SETUP SCRIPT
+-- Run this in your Supabase SQL Editor to fix all "Failed to fetch" errors.
+
+-- 1. CONTENT TABLES
 CREATE TABLE IF NOT EXISTS public.programs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     title TEXT NOT NULL,
@@ -36,6 +40,51 @@ CREATE TABLE IF NOT EXISTS public.programs (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS public.events (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    date TEXT,
+    location TEXT,
+    description TEXT,
+    image TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.opportunities (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    type TEXT,
+    title TEXT,
+    organization TEXT,
+    deadline TEXT,
+    link TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.social_posts (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    platform TEXT,
+    thumbnail TEXT,
+    caption TEXT,
+    redirect_url TEXT,
+    timestamp TEXT,
+    likes INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.gallery_images (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    url TEXT NOT NULL,
+    caption TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.app_settings (
+    setting_key TEXT PRIMARY KEY,
+    setting_value TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 2. APPLICATION & INTERACTION TABLES
 CREATE TABLE IF NOT EXISTS public.program_applications (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     full_name TEXT,
@@ -47,32 +96,78 @@ CREATE TABLE IF NOT EXISTS public.program_applications (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 2. CREATE STORAGE BUCKET
+CREATE TABLE IF NOT EXISTS public.event_rsvps (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    event_id UUID,
+    event_title TEXT,
+    email TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.volunteer_applications (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    task_id TEXT,
+    task_title TEXT,
+    user_id UUID,
+    user_name TEXT,
+    email TEXT,
+    motivation TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 3. STORAGE BUCKET SETUP
+-- Note: Run this part separately if it fails due to permissions, 
+-- or create the 'content' bucket manually in the Storage tab.
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('content', 'content', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 3. SET UP STORAGE POLICIES
-CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'content');
-CREATE POLICY "Admin All Access" ON storage.objects FOR ALL USING (bucket_id = 'content');
-
--- 4. ENABLE RLS & PUBLIC ACCESS
+-- 4. ENABLE RLS & PERMISSIONS
+-- This ensures the app can actually read and write data.
 ALTER TABLE public.programs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.opportunities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.social_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.gallery_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.program_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_rsvps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.volunteer_applications ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Public Select" ON public.programs;
-CREATE POLICY "Public Select" ON public.programs FOR SELECT USING (true);
+-- Allow Public Read Access
+CREATE POLICY "Public Read Programs" ON public.programs FOR SELECT USING (true);
+CREATE POLICY "Public Read Events" ON public.events FOR SELECT USING (true);
+CREATE POLICY "Public Read Opps" ON public.opportunities FOR SELECT USING (true);
+CREATE POLICY "Public Read Social" ON public.social_posts FOR SELECT USING (true);
+CREATE POLICY "Public Read Gallery" ON public.gallery_images FOR SELECT USING (true);
+CREATE POLICY "Public Read Settings" ON public.app_settings FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "Public Insert App" ON public.program_applications;
-CREATE POLICY "Public Insert App" ON public.program_applications FOR INSERT WITH CHECK (true);
+-- Allow Public Insert for Applications
+CREATE POLICY "Public Insert Program App" ON public.program_applications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Insert Event RSVP" ON public.event_rsvps FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Insert Vol App" ON public.volunteer_applications FOR INSERT WITH CHECK (true);
 
--- 5. PRE-FILL INITIAL SKILLS (OPTIONAL)
+-- Allow Admin Full Access (assuming authenticated user)
+CREATE POLICY "Admin All Access Programs" ON public.programs FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin All Access Events" ON public.events FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin All Access Opps" ON public.opportunities FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin All Access Social" ON public.social_posts FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin All Access Gallery" ON public.gallery_images FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin All Access Settings" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin All Access Apps" ON public.program_applications FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin All Access RSVPs" ON public.event_rsvps FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin All Access Vol" ON public.volunteer_applications FOR ALL USING (auth.role() = 'authenticated');
+
+-- 5. INITIAL DATA SEEDING
 INSERT INTO public.programs (title, category, description, duration, image)
 VALUES 
 ('YAWAI 3-Month Skill Acquisition Program', 'Skill Acquisition', 'Main empowerment program for youth and women.', '3 Months', 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=800'),
 ('Video Editing', 'Skill Track', 'Professional video cutting and storytelling.', '3 Months', 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=800'),
 ('Graphics Design', 'Skill Track', 'Branding and layout design principles.', '3 Months', 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=800'),
-('Auto-Gele & Turban', 'Skill Track', 'Traditional headgear and modern turban styling.', '3 Months', 'https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?q=80&w=800');`;
+('Auto-Gele & Turban', 'Skill Track', 'Traditional headgear and modern turban styling.', '3 Months', 'https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?q=80&w=800')
+ON CONFLICT DO NOTHING;
+`;
 
   const checkSystemHealth = async () => {
     setLoading(true);
@@ -139,7 +234,7 @@ VALUES
                 </div>
                 <h4 className="font-bold text-slate-900">Media Bucket</h4>
                 <p className="text-[10px] text-slate-500 mt-1 font-medium leading-relaxed">
-                  The 'content' bucket is required for all image uploads in the Admin Panel.
+                  The 'content' bucket is required for all image uploads.
                 </p>
               </div>
 
@@ -149,12 +244,12 @@ VALUES
                     <Database size={24} />
                   </div>
                   <span className={`${missingTables.length === 0 ? 'bg-green-500' : 'bg-red-500'} text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest`}>
-                    {missingTables.length === 0 ? 'Online' : 'Broken'}
+                    {missingTables.length === 0 ? 'Online' : 'Infrastructure Gap'}
                   </span>
                 </div>
                 <h4 className="font-bold text-slate-900">Table Schema</h4>
                 <p className="text-[10px] text-slate-500 mt-1 font-medium leading-relaxed">
-                  {missingTables.length === 0 ? 'All systems operational.' : `${missingTables.length} tables missing from public schema.`}
+                  {missingTables.length === 0 ? 'All systems operational.' : `${missingTables.length} tables are missing in your Supabase project.`}
                 </p>
               </div>
             </div>
@@ -185,7 +280,7 @@ VALUES
           <div className="relative z-10">
             <h3 className="text-xl font-black mb-2">Master Fix Script</h3>
             <p className="text-slate-400 text-[10px] leading-relaxed mb-6 font-medium">
-              Run this SQL to create the 'content' bucket and the 3-Month Program skill tracks.
+              Copy this script and run it in your Supabase SQL Editor to create all missing tables and seed initial programs.
             </p>
 
             <div className="bg-black/40 rounded-2xl p-4 mb-6 font-mono text-[9px] h-32 overflow-y-auto no-scrollbar border border-white/5 text-blue-300">
