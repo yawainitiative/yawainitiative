@@ -32,14 +32,15 @@ const AdminGallery: React.FC = () => {
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    // Fix: Explicitly cast Array.from result to File[] to prevent 'unknown[]' inference which causes issues when passed to Blob-expecting functions
+    const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
 
     const newFiles = [...selectedFiles, ...files];
     setSelectedFiles(newFiles);
 
     // Generate previews
-    files.forEach(file => {
+    files.forEach((file: File) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setUploadPreviews(prev => [
@@ -68,14 +69,12 @@ const AdminGallery: React.FC = () => {
       return;
     }
 
-    // Fix: line 50 might be close to here in the actual environment.
-    // Ensuring setIsSaving receives a boolean and the subsequent map is strictly typed.
     setIsSaving(true);
     setSaveError(null);
 
     try {
       // Process all uploads in parallel
-      // Explicitly typing 'file' as 'File' to prevent 'unknown' inference issues.
+      // Fix: Ensure file parameter is explicitly typed as File to avoid unknown assignment to Blob
       const uploadPromises = selectedFiles.map(async (file: File) => {
         const publicUrl = await contentService.uploadImage(file);
         return contentService.addGalleryImage(publicUrl, globalCaption);

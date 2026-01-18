@@ -19,9 +19,7 @@ const ProgramRegistration: React.FC = () => {
   
   const [mainProgram, setMainProgram] = useState<Program | null>(null);
   const [skillTracks, setSkillTracks] = useState<Program[]>([]);
-  const [allRawPrograms, setAllRawPrograms] = useState<Program[]>([]);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
-  const [showDebug, setShowDebug] = useState(false);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -38,20 +36,25 @@ const ProgramRegistration: React.FC = () => {
       setErrorStatus(null);
       try {
         const allPrograms = await contentService.fetchPrograms();
-        setAllRawPrograms(allPrograms);
         
         if (allPrograms.length === 0) {
            setErrorStatus("TABLE_EMPTY");
         } else {
-           const main = allPrograms.find(p => 
-             p.category?.toLowerCase().trim() === 'skill acquisition' || 
-             p.title?.toLowerCase().includes('program')
-           );
+           // Improved Logic:
+           // 1. Look for the main header (Category: 'Skill Acquisition' or Title contains 'Program')
+           const main = allPrograms.find(p => {
+             const cat = (p.category || '').toLowerCase().trim();
+             const tit = (p.title || '').toLowerCase();
+             return cat === 'skill acquisition' || (tit.includes('skill acquisition') && cat !== 'skill track');
+           });
            setMainProgram(main || null);
 
+           // 2. Look for the individual tracks (Category: 'Skill Track' or any category that ISN'T main)
            const tracks = allPrograms.filter(p => {
              const cat = (p.category || '').toLowerCase().trim();
-             return cat.includes('track') || (cat.includes('skill') && p.id !== main?.id);
+             const isMain = p.id === main?.id;
+             // Include if explicitly marked as track OR if not the main header and not null
+             return !isMain && (cat.includes('track') || cat.includes('skill') || cat !== 'skill acquisition');
            });
            
            if (tracks.length === 0 && !main) {
@@ -61,7 +64,7 @@ const ProgramRegistration: React.FC = () => {
         }
       } catch (err: any) {
         console.error("Failed to load skills:", err);
-        if (err.code === '42P01') setErrorStatus("TABLE_MISSING");
+        if (err.message === 'Failed to fetch' || err.code === '42P01') setErrorStatus("TABLE_MISSING");
         else setErrorStatus("DATABASE_ERROR");
       } finally {
         setLoading(false);
@@ -94,7 +97,7 @@ const ProgramRegistration: React.FC = () => {
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      alert(`Registration failed: ${err.message}`);
+      alert(`Registration failed: ${err.message || "Failed to submit. Table 'program_applications' might be missing."}`);
     } finally {
       setSubmitting(false);
     }
@@ -178,6 +181,12 @@ const ProgramRegistration: React.FC = () => {
                </div>
             </div>
           </div>
+        ) : !loading && errorStatus === 'TABLE_MISSING' ? (
+           <div className="bg-red-50 border border-red-200 p-10 rounded-[3rem] text-center mb-20 text-red-900">
+              <Database size={40} className="mx-auto mb-4" />
+              <p className="font-black text-xl uppercase tracking-tighter">Database Setup Required</p>
+              <p className="text-sm font-medium opacity-70 mt-2">The 'programs' table does not exist in your Supabase project. Contact your administrator to run the Master Fix Script.</p>
+           </div>
         ) : !loading && (
           <div className="bg-amber-50 border border-amber-200 p-10 rounded-[3rem] text-center mb-20 text-amber-900">
              <AlertCircle size={40} className="mx-auto mb-4" />
@@ -242,10 +251,10 @@ const ProgramRegistration: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
-               <Info size={48} className="mx-auto mb-4 text-yawai-gold" />
-               <p className="text-xl font-black text-slate-800">No Skill Tracks Found</p>
-               <p className="text-sm text-slate-500 mt-2">Add individual skills with the category <strong>'Skill Track'</strong> in your Admin Panel to list them here.</p>
+            <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200 shadow-sm">
+               <Info size={48} className="mx-auto mb-4 text-yawai-gold opacity-50" />
+               <p className="text-xl font-black text-slate-800 uppercase tracking-tight">No tracks currently listed</p>
+               <p className="text-sm text-slate-500 mt-2 font-medium">Check back soon for upcoming admission cohorts.</p>
             </div>
           )}
         </section>
