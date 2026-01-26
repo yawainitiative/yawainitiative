@@ -85,10 +85,11 @@ CREATE TABLE IF NOT EXISTS public.app_settings (
 );
 
 -- 2. APPLICATION & INTERACTION TABLES
+-- Note: Added UNIQUE(email) to prevent duplicate registrations
 CREATE TABLE IF NOT EXISTS public.program_applications (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     full_name TEXT,
-    email TEXT,
+    email TEXT NOT NULL UNIQUE,
     phone TEXT,
     skill_track TEXT,
     motivation TEXT,

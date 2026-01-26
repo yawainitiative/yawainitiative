@@ -16,6 +16,7 @@ const ProgramRegistration: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
   
   const [mainProgram, setMainProgram] = useState<Program | null>(null);
   const [skillTracks, setSkillTracks] = useState<Program[]>([]);
@@ -40,8 +41,6 @@ const ProgramRegistration: React.FC = () => {
         if (allPrograms.length === 0) {
            setErrorStatus("TABLE_EMPTY");
         } else {
-           // Improved Logic:
-           // 1. Look for the main header (Category: 'Skill Acquisition' or Title contains 'Program')
            const main = allPrograms.find(p => {
              const cat = (p.category || '').toLowerCase().trim();
              const tit = (p.title || '').toLowerCase();
@@ -49,11 +48,9 @@ const ProgramRegistration: React.FC = () => {
            });
            setMainProgram(main || null);
 
-           // 2. Look for the individual tracks (Category: 'Skill Track' or any category that ISN'T main)
            const tracks = allPrograms.filter(p => {
              const cat = (p.category || '').toLowerCase().trim();
              const isMain = p.id === main?.id;
-             // Include if explicitly marked as track OR if not the main header and not null
              return !isMain && (cat.includes('track') || cat.includes('skill') || cat !== 'skill acquisition');
            });
            
@@ -75,25 +72,54 @@ const ProgramRegistration: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setDuplicateError(null);
+
     if (!formData.selectedSkill) {
       alert("Please select a skill track first.");
       return;
     }
+
     setSubmitting(true);
     
     try {
+      // 1. Check if email already exists in program_applications
+      const { data: existing, error: checkError } = await supabase
+        .from('program_applications')
+        .select('id')
+        .eq('email', formData.email.toLowerCase().trim())
+        .limit(1);
+
+      if (checkError && checkError.code !== '42P01') throw checkError;
+
+      if (existing && existing.length > 0) {
+        setDuplicateError(`A registration with the email "${formData.email}" has already been received. You can only apply once per cohort.`);
+        setSubmitting(false);
+        // Scroll to error
+        document.getElementById('register-error')?.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
+      // 2. If not duplicate, proceed with insertion
       const { error } = await supabase
         .from('program_applications')
         .insert([{
             full_name: formData.fullName,
-            email: formData.email,
+            email: formData.email.toLowerCase().trim(),
             phone: formData.phone,
             skill_track: formData.selectedSkill,
             motivation: formData.motivation,
             program_name: mainProgram?.title || '3-Month Skill Acquisition 2026'
         }]);
 
-      if (error) throw error;
+      if (error) {
+        // Handle database-level unique constraint failure just in case
+        if (error.code === '23505') {
+            setDuplicateError("You have already registered with this email address.");
+            return;
+        }
+        throw error;
+      }
+      
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
@@ -214,6 +240,7 @@ const ProgramRegistration: React.FC = () => {
                   key={track.id} 
                   onClick={() => {
                     setFormData({...formData, selectedSkill: track.title});
+                    setDuplicateError(null);
                     document.getElementById('register')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className={`group text-left bg-white rounded-[2.5rem] overflow-hidden shadow-soft border transition-all duration-300 active:scale-[0.98]
@@ -271,6 +298,16 @@ const ProgramRegistration: React.FC = () => {
              </div>
              
              <form onSubmit={handleSubmit} className="p-8 md:p-14 space-y-8">
+                {duplicateError && (
+                  <div id="register-error" className="bg-red-50 border border-red-100 p-6 rounded-3xl flex items-start gap-4 text-red-800 animate-slide-up">
+                    <AlertCircle size={24} className="shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-black uppercase tracking-tight">Existing Application Found</p>
+                      <p className="text-xs font-medium leading-relaxed opacity-80">{duplicateError}</p>
+                    </div>
+                  </div>
+                )}
+
                 {formData.selectedSkill ? (
                   <div className="bg-yawai-gold/10 border border-yawai-gold/20 p-6 rounded-3xl flex items-center justify-between animate-fade-in">
                      <div className="flex items-center gap-4">
@@ -282,7 +319,7 @@ const ProgramRegistration: React.FC = () => {
                            <p className="text-xl font-black text-slate-800">{formData.selectedSkill}</p>
                         </div>
                      </div>
-                     <button type="button" onClick={() => setFormData({...formData, selectedSkill: ''})} className="text-[10px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm">Change</button>
+                     <button type="button" onClick={() => { setFormData({...formData, selectedSkill: ''}); setDuplicateError(null); }} className="text-[10px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm">Change</button>
                   </div>
                 ) : (
                   <div className="bg-slate-50 border border-dashed border-slate-200 p-8 rounded-3xl text-center">
