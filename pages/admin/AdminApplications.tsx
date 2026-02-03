@@ -19,7 +19,9 @@ import {
   Star,
   CheckCircle,
   AlertCircle,
-  Send
+  Send,
+  Copy,
+  Check
 } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 
@@ -31,9 +33,15 @@ const AdminApplications: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  
+  // Copy Feedback States
+  const [copyStatus, setCopyStatus] = useState<{field: string | null}>({field: null});
 
   const fetchData = async () => {
     setLoading(true);
+    // CRITICAL: Clear existing data immediately to prevent ghosting between tabs
+    setData([]); 
+    
     try {
       let query;
       if (activeTab === 'programs') {
@@ -62,6 +70,13 @@ const AdminApplications: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [activeTab]);
+
+  const handleCopy = (text: string, field: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopyStatus({ field });
+    setTimeout(() => setCopyStatus({ field: null }), 2000);
+  };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Permanently delete this submission?")) return;
@@ -241,9 +256,18 @@ const AdminApplications: React.FC = () => {
                    {(selectedItem.full_name || selectedItem.user_name || selectedItem.email).charAt(0).toUpperCase()}
                  </div>
                  <div>
-                    <h3 className="text-2xl font-black text-slate-900 leading-tight">
-                      {selectedItem.full_name || selectedItem.user_name || 'Attendee'}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                       <h3 className="text-2xl font-black text-slate-900 leading-tight">
+                         {selectedItem.full_name || selectedItem.user_name || 'Attendee'}
+                       </h3>
+                       <button 
+                        onClick={() => handleCopy(selectedItem.full_name || selectedItem.user_name, 'name')}
+                        className={`p-1.5 rounded-lg transition-all ${copyStatus.field === 'name' ? 'bg-green-100 text-green-600' : 'hover:bg-slate-200 text-slate-400'}`}
+                        title="Copy Name"
+                       >
+                         {copyStatus.field === 'name' ? <Check size={14} /> : <Copy size={14} />}
+                       </button>
+                    </div>
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
                       Received: {new Date(selectedItem.created_at).toLocaleString()}
                     </p>
@@ -278,13 +302,24 @@ const AdminApplications: React.FC = () => {
                <div className="space-y-4">
                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Contact Details</h4>
                   <div className="flex flex-wrap gap-4">
-                     <a href={`mailto:${selectedItem.email}`} className="flex-1 min-w-[200px] flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:border-yawai-blue transition-all group shadow-sm">
+                     <div className="flex-1 min-w-[200px] flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:border-yawai-blue transition-all group shadow-sm">
                         <div className="flex items-center gap-3">
                            <Mail className="text-slate-400 group-hover:text-yawai-blue" size={20} />
                            <span className="font-bold text-slate-700">{selectedItem.email}</span>
                         </div>
-                        <ExternalLink size={14} className="text-slate-300" />
-                     </a>
+                        <div className="flex items-center gap-2">
+                           <button 
+                             onClick={() => handleCopy(selectedItem.email, 'email')}
+                             className={`p-1.5 rounded-lg transition-all ${copyStatus.field === 'email' ? 'bg-green-100 text-green-600' : 'hover:bg-slate-100 text-slate-300 group-hover:text-yawai-blue'}`}
+                             title="Copy Email"
+                           >
+                             {copyStatus.field === 'email' ? <Check size={14} /> : <Copy size={14} />}
+                           </button>
+                           <a href={`mailto:${selectedItem.email}`} target="_blank" rel="noreferrer">
+                             <ExternalLink size={14} className="text-slate-300 hover:text-yawai-blue" />
+                           </a>
+                        </div>
+                     </div>
                      {selectedItem.phone && (
                         <a href={`tel:${selectedItem.phone}`} className="flex-1 min-w-[200px] flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl hover:border-green-500 transition-all group shadow-sm">
                            <div className="flex items-center gap-3">
